@@ -1,7 +1,7 @@
 #ifndef BDO_ANTIDETECTION_H
 #define BDO_ANTIDETECTION_H
 
-#include <windows.h>
+#include "Platform.h"
 #include <random>
 #include <chrono>
 #include <thread>
