@@ -1,7 +1,7 @@
 #ifndef ANTIDETECTION_H
 #define ANTIDETECTION_H
 
-#include <windows.h>
+#include "Platform.h"
 #include <random>
 #include <chrono>
 #include <thread>
