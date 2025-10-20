@@ -132,15 +132,15 @@ private:
 };
 
 // Utility class for BDO memory reading (requires elevation)
-class BDOMemory {
+class BDOMemoryReader {
 private:
     HANDLE processHandle;
     DWORD processId;
     uintptr_t baseAddress;
     
 public:
-    BDOMemory();
-    ~BDOMemory();
+    BDOMemoryReader();
+    ~BDOMemoryReader();
     
     bool Attach();
     void Detach();

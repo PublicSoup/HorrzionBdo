@@ -1,8 +1,9 @@
+#include "pch.h"
 #include "AntiDetection.h"
 #include <iostream>
 
 AntiDetection::AntiDetection() 
-    : rng(std::chrono::steady_clock::now().time_since_epoch().count()),
+    : rng(static_cast<unsigned int>(std::chrono::steady_clock::now().time_since_epoch().count())),
       timingDist(50, 200),  // Default timing range 50-200ms
       pauseDist(1, 100),    // For pause chance calculation
       jitterDist(-5.0, 5.0), // Default jitter range -5 to +5 pixels

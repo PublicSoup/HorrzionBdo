@@ -1,0 +1,118 @@
+# BDO Stealth Bot - Git Ignore File
+
+# Build Outputs
+bin/
+obj/
+x64/
+Debug/
+Release/
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.iobj
+*.ipdb
+*.pch
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln.docstates
+*.vcxproj.filters
+*.vcxproj.user
+*.aps
+*.ncb
+*.opendb
+*.opensdf
+*.sdf
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# Compiled Drivers
+*.sys
+*.inf
+*.cat
+
+# Temporary Files
+*.log
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# User-Specific
+my_addresses.txt
+addresses.txt
+bdo_addresses.txt
+*.CT
+*.CEA
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Test Files
+test_*.cpp
+temp_*.cpp
+
+# Personal Data
+TODO_PRIVATE.md
+NOTES.txt
+personal_*.txt
+
+# Keep Example Files (Override)
+!docs/example_addresses.txt
+!examples/
+
+# IDE
+*.code-workspace
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# Packages
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs
+*.log
+logs/
+*.stackdump
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Build Tools
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+
+# Keep Important Build Files
+!build.bat
+!COMPILE_NOW.bat
+!one_click_setup.bat
+!test_bdo.bat
+!uninstall_driver.bat
+
+# Documentation - Keep All
+!*.md
+!*.txt
+!README*
+!GUIDE*
+!LICENSE
