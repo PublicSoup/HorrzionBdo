@@ -38,8 +38,18 @@ echo [6/7] Compiling EXAMPLE_USAGE...
 cl /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS EXAMPLE_USAGE.cpp BDO_SecureClient.obj /link /Fe:EXAMPLE_USAGE.exe
 if errorlevel 1 goto error
 
-echo [7/7] Compiling BDO_SimpleIntegration...
+echo [7/8] Compiling BDO_SimpleIntegration...
 cl /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_SimpleIntegration.cpp BDO_SecureClient.obj /link /Fe:BDO_SimpleIntegration.exe
+if errorlevel 1 goto error
+
+echo [8/9] Compiling BDO_AutoAddressFinder...
+cl /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_AutoAddressFinder.cpp BDO_SecureClient.obj /link /Fe:BDO_AutoAddressFinder.exe
+if errorlevel 1 goto error
+
+echo [9/9] Compiling BDO_AddressScanner_RTCore...
+cl /c /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_RTCore64_Driver.cpp
+cl /c /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_RTCore64_Error.cpp
+cl /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_AddressScanner_RTCore.cpp BDO_RTCore64_Driver.obj BDO_RTCore64_Error.obj /link /Fe:BDO_AddressScanner_RTCore.exe
 if errorlevel 1 goto error
 
 echo.
@@ -48,12 +58,14 @@ echo COMPILATION SUCCESSFUL
 echo ===============================================
 echo.
 echo Executables created:
-echo   - BDO_KernelTest.exe (test suite)
+echo   - BDO_KernelTest.exe (test custom driver)
 echo   - BDO_PracticalBot.exe (working bot)
 echo   - BDO_SecureLoader.exe (BYOVD loader)
 echo   - BDO_StressTest.exe (stress testing)
 echo   - EXAMPLE_USAGE.exe (usage examples)
 echo   - BDO_SimpleIntegration.exe (standalone integration)
+echo   - BDO_AutoAddressFinder.exe (scanner with custom driver)
+echo   - BDO_AddressScanner_RTCore.exe (scanner with RTCore64)
 echo.
 echo Next: Install driver with install_driver.bat
 echo.
