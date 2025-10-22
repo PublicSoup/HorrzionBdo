@@ -753,9 +753,15 @@ NTSTATUS ScanPattern(
     NTSTATUS status;
     ULONG64 currentAddress;
     PUCHAR scanBuffer;
-    SIZE_T chunkSize = 0x10000; // 64KB chunks
+    SIZE_T chunkSize = 0x100000; // 1MB chunks (optimized from 64KB)
+    SIZE_T overlap = PatternLength - 1; // Overlap to catch patterns at chunk boundaries
     
     *ResultAddress = 0;
+    
+    // Validate inputs
+    if (PatternLength == 0 || PatternLength > 256) {
+        return STATUS_INVALID_PARAMETER;
+    }
     
     // Allocate scan buffer
     scanBuffer = (PUCHAR)ExAllocatePoolWithTag(NonPagedPool, chunkSize, POOL_TAG);
@@ -763,21 +769,30 @@ NTSTATUS ScanPattern(
         return STATUS_INSUFFICIENT_RESOURCES;
     }
     
-    // Scan memory in chunks
-    for (currentAddress = StartAddress; currentAddress < EndAddress; currentAddress += chunkSize) {
+    // Scan memory in chunks with overlap
+    for (currentAddress = StartAddress; 
+         currentAddress < EndAddress; 
+         currentAddress += (chunkSize - overlap)) {
+        
         SIZE_T readSize = (SIZE_T)min(chunkSize, EndAddress - currentAddress);
         
+        // Read chunk with exception handling
         status = SafeReadProcessMemory(ProcessId, currentAddress, scanBuffer, readSize);
+        
         if (NT_SUCCESS(status)) {
-            // Search for pattern in chunk
+            // Linear search through chunk
             for (SIZE_T i = 0; i <= readSize - PatternLength; i++) {
                 if (ComparePattern(&scanBuffer[i], Pattern, Mask, PatternLength)) {
+                    // Found match!
                     *ResultAddress = currentAddress + i;
                     ExFreePoolWithTag(scanBuffer, POOL_TAG);
+                    
+                    KdPrint(("[BDO] Pattern found at 0x%llX\n", *ResultAddress));
                     return STATUS_SUCCESS;
                 }
             }
         }
+        // Continue even if read fails (region might be protected)
     }
     
     ExFreePoolWithTag(scanBuffer, POOL_TAG);
@@ -871,9 +886,12 @@ VOID XOREncryptDecrypt(PUCHAR Data, SIZE_T Size, UCHAR Key) {
 
 BOOLEAN ComparePattern(PUCHAR Data, PUCHAR Pattern, PUCHAR Mask, SIZE_T Length) {
     for (SIZE_T i = 0; i < Length; i++) {
-        if (Mask[i] == 0xFF && Data[i] != Pattern[i]) {
-            return FALSE;
+        if (Mask[i] == 0xFF) {
+            if (Data[i] != Pattern[i]) {
+                return FALSE;
+            }
         }
+        // Mask[i] == 0x00 = wildcard, always matches
     }
     return TRUE;
 }

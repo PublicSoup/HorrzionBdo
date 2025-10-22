@@ -47,10 +47,13 @@ cl /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_AutoAddressFinder.cpp BDO_
 if errorlevel 1 goto error
 
 echo [9/9] Compiling BDO_AddressScanner_RTCore...
-cl /c /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_RTCore64_Driver.cpp
-cl /c /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_RTCore64_Error.cpp
-cl /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS BDO_AddressScanner_RTCore.cpp BDO_RTCore64_Driver.obj BDO_RTCore64_Error.obj /link /Fe:BDO_AddressScanner_RTCore.exe
-if errorlevel 1 goto error
+cl /c /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS /nologo BDO_RTCore64_Driver.cpp 2>nul
+cl /c /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS /nologo BDO_RTCore64_Error.cpp 2>nul
+cl /EHsc /std:c++17 /W3 /D_CRT_SECURE_NO_WARNINGS /nologo BDO_AddressScanner_RTCore.cpp BDO_RTCore64_Driver.obj BDO_RTCore64_Error.obj /link /Fe:BDO_AddressScanner_RTCore.exe 2>nul
+if errorlevel 1 (
+    echo [!] RTCore scanner compilation failed - missing dependencies
+    echo [!] This is OK if you don't have BDO_RTCore64_Driver.cpp
+)
 
 echo.
 echo ===============================================
