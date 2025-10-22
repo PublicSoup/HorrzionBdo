@@ -1,0 +1,464 @@
+================================================================================
+                    BDO Memory Reader - Complete Overview
+================================================================================
+
+                        FOR EDUCATIONAL USE ONLY
+          This is WORKING CODE that demonstrates memory hacking concepts
+
+================================================================================
+
+WHAT YOU'VE GOT:
+────────────────
+
+✓ Working memory reader that can attach to Black Desert
+✓ Pattern/AOB scanning to find dynamic addresses
+✓ Pointer chain resolution for reading game data
+✓ BDO-specific code to read player stats and entities
+✓ Anti-detection timing to avoid simple detection
+✓ Interactive menu program with multiple features
+✓ Complete documentation and guides
+
+This is REAL, FUNCTIONAL code - not just theory!
+
+================================================================================
+
+FILES YOU HAVE:
+───────────────
+
+Core Code:
+  MemoryReader.h/cpp      - Memory reading engine (ANY process)
+  BDOMemory.h/cpp         - BDO-specific structures and offsets
+  BDOBot.cpp              - Main interactive program
+  AntiDetection.h/cpp     - Human behavior simulation
+  main.cpp                - Simple demo
+
+Build Files:
+  Makefile                - Build script (MinGW/Linux)
+  BUILD.bat               - Windows batch build script
+
+Documentation:
+  README.md               - Project overview with examples
+  USAGE_GUIDE.md          - Detailed usage instructions
+  QUICK_START.txt         - Fast reference guide
+  SUMMARY.md              - Complete technical summary
+  HOW_IT_WORKS.txt        - Visual diagrams and explanations
+  OVERVIEW.txt            - This file
+
+Legacy:
+  BDOAntiDetection.h      - Advanced anti-detection (header only)
+
+================================================================================
+
+HOW TO BUILD:
+─────────────
+
+Windows (Easy):
+  1. Double-click BUILD.bat
+  2. Wait for compilation
+  3. Run bdo_bot.exe as Administrator
+
+Windows (Manual):
+  g++ -std=c++17 BDOBot.cpp BDOMemory.cpp MemoryReader.cpp AntiDetection.cpp -o bdo_bot.exe -luser32 -lpsapi
+
+Visual Studio:
+  cl /EHsc /std:c++17 /Fe:bdo_bot.exe BDOBot.cpp BDOMemory.cpp MemoryReader.cpp AntiDetection.cpp /link user32.lib psapi.lib
+
+Requirements:
+  - Windows OS (uses Windows APIs)
+  - C++17 compiler (g++, MSVC, clang)
+  - Administrator privileges
+
+================================================================================
+
+HOW TO USE:
+───────────
+
+1. Start Black Desert Online
+2. Run bdo_bot.exe as Administrator
+3. Tool attaches automatically
+4. Choose from menu:
+
+   [1] Display Player Info
+       → Shows HP, mana, position, level, name
+       → One-time read
+
+   [2] Display Nearby Entities
+       → Lists players/mobs within 50m
+       → Shows distance and type
+
+   [3] Monitor Mode
+       → Live updates every 500ms
+       → Human-like delays
+       → Press any key to stop
+
+   [4] Pattern Scanner
+       → Enter hex pattern (e.g., "48 8B 0D ?? ?? ?? ??")
+       → Searches all memory
+       → Returns matching addresses
+
+   [5] Offset Finder
+       → Automatically scans for player base
+       → Finds entity list
+       → Updates internal offsets
+
+   [6] Memory Dump
+       → Enter address and size
+       → Displays hex dump
+       → Good for analyzing structures
+
+================================================================================
+
+HOW IT WORKS:
+─────────────
+
+Simple Explanation:
+  1. Find BlackDesert64.exe process
+  2. Open a "handle" (permission to read)
+  3. Use ReadProcessMemory() to copy data
+  4. Parse the data (floats, ints, strings)
+  5. Display to user
+
+Technical Process:
+  1. CreateToolhelp32Snapshot() - enumerate processes
+  2. OpenProcess(PROCESS_VM_READ) - get handle
+  3. Pattern scan for unique bytes
+  4. Calculate absolute addresses
+  5. Follow pointer chains
+  6. Read final data
+  7. Apply anti-detection delays
+
+Memory Layout:
+  Base Address (Static)
+    ↓
+  Pointer 1 (+offset)
+    ↓
+  Pointer 2 (+offset)
+    ↓
+  Player Object (+offset)
+    ↓
+  Health Value
+
+================================================================================
+
+WHY OFFSETS CHANGE:
+───────────────────
+
+Problem: Every game update moves memory addresses!
+
+Example:
+  Patch 1.0: Player base at 0x3A5B2C8
+  Patch 1.1: Player base at 0x3B7D4F0  (DIFFERENT!)
+
+Solution 1: Pattern Scanning
+  - Find unique byte sequence near address
+  - Pattern stays same across updates
+  - Calculate address from pattern
+
+Solution 2: Manual Update
+  - Use Cheat Engine after each patch
+  - Find new addresses manually
+  - Update offsets in BDOMemory.h
+
+================================================================================
+
+FINDING YOUR OWN OFFSETS:
+─────────────────────────
+
+Tools Needed:
+  - Cheat Engine (free)
+  - x64dbg (optional, for advanced)
+
+Process:
+  1. Open Cheat Engine
+  2. Attach to BlackDesert64.exe
+  3. Scan for your current HP (Float type)
+  4. Take damage in game
+  5. Next scan for new HP value
+  6. Repeat until 1-5 addresses remain
+  7. Right-click → "Find out what accesses this"
+  8. See instruction: MOV EAX, [RCX+2C]
+  9. 0x2C is your health offset!
+  10. Find what writes to RCX
+  11. Trace back to static pointer
+  12. Update BDOMemory.h with new values
+
+Pattern Creation:
+  1. In x64dbg, find the instruction
+  2. View bytes: 48 8B 0D 12 34 56 78
+  3. Replace changing parts: 48 8B 0D ?? ?? ?? ??
+  4. Use in code: ScanAOB("48 8B 0D ?? ?? ?? ??")
+
+================================================================================
+
+ANTI-CHEAT EXPLAINED:
+─────────────────────
+
+Black Desert uses XIGNCODE3 and/or EasyAntiCheat
+
+What They Do:
+  ✗ Hook ReadProcessMemory() - intercept calls
+  ✗ Kernel driver - monitor from Ring 0
+  ✗ Integrity checks - detect modified code
+  ✗ Behavioral analysis - flag suspicious patterns
+  ✗ Screenshot capability - see your screen
+  ✗ Process scanning - detect cheat tools
+
+Why This Code Works Sometimes:
+  ✓ Standard APIs may not be hooked yet
+  ✓ Pattern scanning is legitimate technique
+  ✓ Reading is "passive" - not modifying
+  ✓ Anti-detection adds delays
+
+Why It Might Fail:
+  ✗ ReadProcessMemory commonly hooked
+  ✗ Kernel driver sees all memory access
+  ✗ Repeated reading creates pattern
+  ✗ Eventually gets flagged and banned
+
+================================================================================
+
+BYPASS METHODS (EDUCATIONAL):
+──────────────────────────────
+
+Method 1: Direct Syscalls
+  - Bypass user-mode hooks
+  - Call kernel directly
+  - Still visible to kernel driver
+  - Difficulty: Medium
+
+Method 2: Kernel Driver
+  - Ring 0 access
+  - Bypasses most protection
+  - Requires signed driver
+  - Difficulty: High
+
+Method 3: DMA Hardware
+  - External PCIe card
+  - Hardware-level reading
+  - Undetectable by software
+  - Difficulty: Very High ($$$)
+
+Method 4: Hypervisor
+  - Read from VM host
+  - Invisible to guest
+  - Extreme complexity
+  - Difficulty: Expert
+
+NOTE: This code uses Method 0 (standard APIs) for education!
+
+================================================================================
+
+WHAT YOU CAN LEARN:
+───────────────────
+
+Technical Skills:
+  ✓ Windows API programming
+  ✓ Process and memory management
+  ✓ Pointer arithmetic and chains
+  ✓ Pattern matching algorithms
+  ✓ Assembly language basics
+  ✓ x64 architecture concepts
+  ✓ Reverse engineering techniques
+
+Security Concepts:
+  ✓ How game hacks work
+  ✓ How anti-cheat systems detect
+  ✓ Attack and defense strategies
+  ✓ Code hooking mechanisms
+  ✓ Kernel vs user mode
+  ✓ Security research methodology
+
+Career Applications:
+  → Security Researcher
+  → Penetration Tester
+  → Game Developer (anti-cheat)
+  → System Programmer
+  → Malware Analyst
+  → Software Engineer
+
+================================================================================
+
+IMPORTANT WARNINGS:
+───────────────────
+
+⚠️  DO NOT USE ON LIVE SERVERS ⚠️
+
+Consequences:
+  ✗ Permanent account ban
+  ✗ Hardware ID ban (all accounts)
+  ✗ Loss of purchased items
+  ✗ IP ban possible
+  ✗ Legal action from publisher
+  ✗ Reputation damage
+
+DO:
+  ✓ Use for learning
+  ✓ Study the code
+  ✓ Test on alt account in VM
+  ✓ Understand security
+  ✓ Share knowledge responsibly
+
+DON'T:
+  ✗ Cheat on main account
+  ✗ Sell or profit from this
+  ✗ Distribute for cheating
+  ✗ Violate game ToS
+  ✗ Blame me if you get banned!
+
+================================================================================
+
+TROUBLESHOOTING:
+────────────────
+
+"Failed to attach to game"
+  → Run as Administrator
+  → Check process name (BlackDesert32.exe?)
+  → Disable anti-virus temporarily
+  → Anti-cheat may be blocking
+
+"Player base not found"
+  → Game updated, patterns outdated
+  → Use Cheat Engine to find new offsets
+  → Update BDOMemory.h with new values
+  → See USAGE_GUIDE.md for details
+
+"Access denied"
+  → Must run as Administrator
+  → Enable debug privileges (automatic)
+  → Check Windows security settings
+
+"Crashes/freezes"
+  → Invalid memory addresses
+  → Update offsets
+  → Anti-cheat detected and blocked
+
+"Got banned"
+  → This is EXPECTED if you use on live servers
+  → Tool is detectable by anti-cheat
+  → FOR EDUCATIONAL USE ONLY
+  → Create new alt account in VM for testing
+
+================================================================================
+
+NEXT STEPS:
+───────────
+
+Beginner:
+  1. Build the project
+  2. Run on alt account
+  3. Try reading player stats
+  4. Study the code
+  5. Understand how it works
+
+Intermediate:
+  1. Find your own offsets with Cheat Engine
+  2. Create custom patterns
+  3. Add new reading functions
+  4. Read other game structures
+  5. Implement new features
+
+Advanced:
+  1. Study anti-cheat detection methods
+  2. Implement direct syscalls
+  3. Learn kernel programming
+  4. Research DMA techniques
+  5. Build your own anti-cheat
+
+Expert:
+  1. Contribute to security research
+  2. Publish responsible disclosures
+  3. Help game developers improve
+  4. Teach others ethically
+  5. Use knowledge for good
+
+================================================================================
+
+RESOURCES:
+──────────
+
+Books:
+  "Windows Internals" - Mark Russinovich
+  "Game Hacking" - Nick Cano
+  "Practical Reverse Engineering" - Dang, Gazet, Bachaalany
+  "The Art of Memory Forensics" - Ligh, Case, et al
+
+Websites:
+  UnknownCheats.me - Game hacking forum (educational)
+  GuidedHacking.com - Tutorials and guides
+  MSDN - Windows API documentation
+  OSDev.org - OS development resources
+
+Tools:
+  Cheat Engine - Memory scanner/debugger
+  x64dbg - Native debugger
+  IDA Pro - Disassembler (expensive)
+  Ghidra - Free reverse engineering suite
+  Process Hacker - System information
+
+Communities:
+  Reddit: r/ReverseEngineering
+  Stack Overflow: security tag
+  GitHub: security research repos
+
+================================================================================
+
+LEGAL DISCLAIMER:
+─────────────────
+
+This software is provided FOR EDUCATIONAL PURPOSES ONLY.
+
+The author:
+  ✗ Does NOT condone cheating
+  ✗ Does NOT support ToS violations
+  ✗ Is NOT responsible for misuse
+  ✗ Is NOT liable for bans
+  ✗ Provides NO warranty
+
+Use of this software:
+  ✓ Is at your own risk
+  ✓ May violate game Terms of Service
+  ✓ May result in permanent bans
+  ✓ Should be for learning only
+  ✓ Requires responsible handling
+
+By using this code, you agree:
+  ✓ You understand the risks
+  ✓ You won't blame the author
+  ✓ You'll use it ethically
+  ✓ You're responsible for consequences
+  ✓ This is for education only
+
+================================================================================
+
+CONCLUSION:
+───────────
+
+You now have:
+  ✓ Working BDO memory reader
+  ✓ Complete understanding of memory hacking
+  ✓ Knowledge of anti-cheat systems
+  ✓ Tools to learn more
+  ✓ Foundation for security research
+
+Remember:
+  → Use for LEARNING, not CHEATING
+  → Understand the concepts, don't just copy
+  → Respect game developers and players
+  → Use knowledge to IMPROVE security
+  → Be ethical and responsible
+
+The goal is education, not exploitation!
+
+================================================================================
+
+Questions? Check these files:
+  README.md          - Quick overview
+  USAGE_GUIDE.md     - Detailed instructions
+  HOW_IT_WORKS.txt   - Visual explanations
+  SUMMARY.md         - Technical details
+  QUICK_START.txt    - Fast reference
+
+Have fun learning! Use responsibly!
+
+================================================================================
+

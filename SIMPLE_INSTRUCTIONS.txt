@@ -1,0 +1,73 @@
+╔════════════════════════════════════════════════════════════════╗
+║          BDO STEALTH BOT - QUICK START GUIDE                   ║
+╚════════════════════════════════════════════════════════════════╝
+
+📌 FASTEST WAY TO START:
+
+1. Start Black Desert Online
+2. Double-click: LAUNCH_BOT.bat
+3. Done!
+
+═══════════════════════════════════════════════════════════════
+
+📁 YOUR COMPILED BOT FILES:
+
+✓ bin\x64\Release\BDOStealthBot_14393.exe  (Main bot)
+✓ bin\x64\Release\BDO_BuildTest.exe        (Test version)
+✓ bin\x64\Release\BDO_TestBuild.exe        (Test version)
+
+═══════════════════════════════════════════════════════════════
+
+🔧 AVAILABLE LAUNCH SCRIPTS:
+
+┌─────────────────────────────────────────────────────────────┐
+│ LAUNCH_BOT.bat        ← RECOMMENDED - Simple & Fast         │
+│   • Checks if BDO is running                                │
+│   • Launches the pre-compiled bot                           │
+│   • No compilation needed                                   │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ RUN.bat               ← Advanced - Compiles First           │
+│   • Runs BUILD_AND_RUN.ps1                                  │
+│   • Compiles the bot from source                            │
+│   • Then launches it                                        │
+│   • Use if you modified the code                            │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ SMART_START.bat       ← Alternative Launcher                │
+│   • Similar to LAUNCH_BOT.bat                               │
+│   • Checks for BDO first                                    │
+└─────────────────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT NOTES:
+
+1. Always start BDO BEFORE running the bot
+2. The bot will attach to the BDO process automatically
+3. Built-in anti-detection features are enabled by default
+4. Use the built-in memory scanner (safe from anti-cheat)
+
+═══════════════════════════════════════════════════════════════
+
+📖 MORE INFORMATION:
+
+• Memory Scanning Guide:  SAFE_MEMORY_FINDING.md
+• Quick Start Guide:      QUICK_START_SAFE.md
+• Full Documentation:     README_MAIN.md
+• Troubleshooting:        WHY_BOT_CLOSES.md
+
+═══════════════════════════════════════════════════════════════
+
+🎯 WHAT THE BOT DOES:
+
+✓ Kernel-level memory access (stealth)
+✓ Anti-detection features
+✓ Memory scanning & manipulation
+✓ Pattern-based address finding
+✓ Automatic game state monitoring
+
+═══════════════════════════════════════════════════════════════
+

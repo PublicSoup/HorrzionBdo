@@ -1,0 +1,63 @@
+============================================================
+  HOW TO START THE BOT - ULTRA SIMPLE
+============================================================
+
+STEP 1: Start Black Desert Online
+  - Launch BDO
+  - Log into character
+  - Enter game world
+
+STEP 2: Run the bot
+  - Right-click: RUN.bat
+  - Select: "Run as administrator"
+  - Wait for compilation (first time only)
+  - Bot will start automatically!
+
+That's it! Just 2 steps!
+
+============================================================
+WHAT EACH FILE DOES
+============================================================
+
+RUN.bat                 ← USE THIS! (Main launcher)
+BUILD_AND_RUN.ps1       ← PowerShell script (called by RUN.bat)
+
+Old batch files (you can ignore these):
+  - RUN_EVERYTHING.bat
+  - ONE_CLICK_START.bat
+  - COMPILE_AND_RUN.bat
+  - SMART_START.bat
+  - COMPILE_NOW.bat
+
+============================================================
+ADVANCED USAGE
+============================================================
+
+Compile only (don't run):
+  powershell -File BUILD_AND_RUN.ps1 -CompileOnly
+
+Run only (already compiled):
+  powershell -File BUILD_AND_RUN.ps1 -RunOnly
+
+Skip BDO check:
+  powershell -File BUILD_AND_RUN.ps1 -SkipBDOCheck
+
+============================================================
+TROUBLESHOOTING
+============================================================
+
+Problem: "Execution policy error"
+Solution: Right-click RUN.bat → Run as administrator
+
+Problem: "Visual Studio not found"
+Solution: Install Visual Studio 2019 or 2022
+  https://visualstudio.microsoft.com/downloads/
+
+Problem: "Bot closes immediately"
+Solution: Make sure BDO is running first!
+
+Problem: "Access denied"
+Solution: Run as administrator
+
+============================================================
+

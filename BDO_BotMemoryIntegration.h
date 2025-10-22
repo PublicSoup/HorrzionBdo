@@ -287,13 +287,10 @@ private:
     void FindNewTarget();
 };
 
-// Memory pattern definitions for BDO
-namespace BDOPatterns {
-    // Common patterns for finding addresses
-    const std::string PLAYER_BASE_PATTERN = "48 8B 05 ?? ?? ?? ?? 48 85 C0 74 0E 48 8B 40 08";
-    const std::string HEALTH_OFFSET_PATTERN = "8B 87 ?? ?? ?? ?? 89 45 FC 8B 87";
+// Memory pattern definitions for BDO (using BDOPatterns from BDO_MemoryResolver.h)
+namespace BDOPatternsIntegration {
+    // Additional patterns specific to bot integration
     const std::string INVENTORY_BASE_PATTERN = "48 8B 0D ?? ?? ?? ?? 48 85 C9 74 1A 48 8B 01";
-    const std::string UI_BASE_PATTERN = "48 8B 05 ?? ?? ?? ?? 48 8B 88 ?? ?? ?? ?? 48 85 C9";
     
     // Offsets from base addresses (update these for your game version)
     constexpr size_t HEALTH_OFFSET = 0x2C;

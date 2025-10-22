@@ -1,8 +1,10 @@
 #include "pch.h"
 #include "BDO_AdvancedMemory.h"
+#include "BDO_RTCore64_Driver.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 
 BDOAdvancedMemory::BDOAdvancedMemory() 
     : resolver(std::make_unique<BDOMemoryResolver>()),
@@ -105,17 +107,27 @@ bool BDOAdvancedMemory::Initialize(DWORD processId) {
 }
 
 bool BDOAdvancedMemory::ReadMemory(PVOID address, PVOID buffer, SIZE_T size) {
+    if (!address || !buffer || size == 0) {
+        return false;
+    }
+    
     if (antiDetectionEnabled) {
         AddRandomDelay();
     }
-    return resolver->ReadMemory(address, buffer, size);
+    
+    return ReadMemoryInternal(address, buffer, size);
 }
 
 bool BDOAdvancedMemory::WriteMemory(PVOID address, PVOID buffer, SIZE_T size) {
+    if (!address || !buffer || size == 0) {
+        return false;
+    }
+    
     if (antiDetectionEnabled) {
         AddRandomDelay();
     }
-    return resolver->WriteMemory(address, buffer, size);
+    
+    return WriteMemoryInternal(address, buffer, size);
 }
 
 bool BDOAdvancedMemory::ReadString(PVOID address, std::string& str, SIZE_T maxLength) {
@@ -495,19 +507,28 @@ void BDOAdvancedMemory::PrintDebugInfo() {
     // Placeholder implementation
 }
 
+// External RTCore64 driver instance
+extern RTCore64Driver g_RTCore64;
+
 // Private method implementations
 bool BDOAdvancedMemory::ReadMemoryInternal(PVOID address, PVOID buffer, SIZE_T size) {
-    UNREFERENCED_PARAMETER(address);
-    UNREFERENCED_PARAMETER(buffer);
-    UNREFERENCED_PARAMETER(size);
-    return true;
+    // Try RTCore64 driver first (highest priority)
+    if (g_RTCore64.IsConnected() || g_RTCore64.Connect()) {
+        return g_RTCore64.ReadMemory((ULONG64)address, buffer, size);
+    }
+    
+    // Fall back to resolver (which may use other drivers or user-mode APIs)
+    return resolver->ReadMemory(address, buffer, size);
 }
 
 bool BDOAdvancedMemory::WriteMemoryInternal(PVOID address, PVOID buffer, SIZE_T size) {
-    UNREFERENCED_PARAMETER(address);
-    UNREFERENCED_PARAMETER(buffer);
-    UNREFERENCED_PARAMETER(size);
-    return true;
+    // Try RTCore64 driver first (highest priority)
+    if (g_RTCore64.IsConnected() || g_RTCore64.Connect()) {
+        return g_RTCore64.WriteMemory((ULONG64)address, buffer, size);
+    }
+    
+    // Fall back to resolver (which may use other drivers or user-mode APIs)
+    return resolver->WriteMemory(address, buffer, size);
 }
 
 bool BDOAdvancedMemory::ProtectMemoryInternal(PVOID address, SIZE_T size, DWORD protection) {
@@ -603,8 +624,10 @@ void BDOAdvancedMemory::LogOperation(const std::string& operation, PVOID address
     if (debugEnabled && debugLog.is_open()) {
         auto now = std::chrono::system_clock::now();
         auto time_t = std::chrono::system_clock::to_time_t(now);
+        std::tm timeinfo;
+        localtime_s(&timeinfo, &time_t);
         
-        debugLog << "[" << std::put_time(std::localtime(&time_t), "%Y-%m-%d %H:%M:%S") << "] ";
+        debugLog << "[" << std::put_time(&timeinfo, "%Y-%m-%d %H:%M:%S") << "] ";
         debugLog << operation << " at 0x" << std::hex << address << " size: " << std::dec << size << std::endl;
         debugLog.flush();
     }
@@ -638,7 +661,7 @@ bool BDOAdvancedMemory::NextScan(ScanType scanType, const std::string& value) {
     return scanner->NextScan(scanType, value);
 }
 
-std::vector<BDOMemoryScanner::ScanResult> BDOAdvancedMemory::GetScanResults() {
+std::vector<ScanResult> BDOAdvancedMemory::GetScanResults() {
     if (!scanner) {
         return {};
     }

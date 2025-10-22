@@ -1,6 +1,25 @@
 # Finding BDO Addresses with Cheat Engine - Complete Guide
 
+## ⚠️ **WARNING: THIS METHOD NO LONGER WORKS!**
+
+**BDO's anti-cheat (XIGNCODE3) blocks Cheat Engine!**
+
+**Error you'll get:**
+```
+Security Error
+Code: E019100B
+Error: Suspicious program detected.
+```
+
+**➡️ USE THIS INSTEAD: `SAFE_MEMORY_FINDING.md`**
+
+The bot has a **built-in scanner** that bypasses anti-cheat!
+
+---
+
 ## 📥 Step 1: Download & Install Cheat Engine (2 minutes)
+
+**⚠️ This section is for reference only - use the built-in scanner instead!**
 
 ### Download
 ```

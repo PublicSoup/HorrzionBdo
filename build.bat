@@ -1,41 +1,60 @@
 @echo off
 echo ========================================
-echo   Building BDO Stealth Solution
+echo  BDO Memory Reader - Build Script
 echo ========================================
-
-echo.
-echo [1/3] Ensuring no previous instances are running...
-taskkill /f /im BDOStealthBot.exe > nul 2>&1
-del "%~dp0bin\x64\Release\BDOStealthBot.exe" > nul 2>&1
 echo.
 
-echo [2/3] Setting up Visual Studio environment...
-call "C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64 > nul
+REM Check for g++
+where g++ >nul 2>&1
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: Failed to set up Visual Studio environment.
+    echo [!] g++ not found. Installing MinGW is recommended.
+    echo.
+    echo Download MinGW-w64 from:
+    echo https://sourceforge.net/projects/mingw-w64/
+    echo.
+    echo Or use Visual Studio Developer Command Prompt and run:
+    echo cl /EHsc /std:c++17 /Fe:bdo_bot.exe BDOBot.cpp BDOMemory.cpp MemoryReader.cpp AntiDetection.cpp /link user32.lib psapi.lib
     pause
     exit /b 1
 )
 
-echo [3/3] Building solution with MSBuild...
-set RAND_NAME=BDOStealthBot_%RANDOM%
-msbuild "%~dp0BDOStealthBot.sln" /p:Configuration=Release /p:Platform=x64 /p:TargetName=%RAND_NAME%
-if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: MSBuild failed!
+echo [*] Compiling BDO Memory Reader...
+echo.
+
+REM Clean old files
+if exist *.o del *.o
+if exist bdo_bot.exe del bdo_bot.exe
+if exist antidetection_demo.exe del antidetection_demo.exe
+
+REM Compile BDO Bot
+echo [*] Building bdo_bot.exe...
+g++ -std=c++17 -Wall -Wextra -O2 -c MemoryReader.cpp -o MemoryReader.o
+g++ -std=c++17 -Wall -Wextra -O2 -c BDOMemory.cpp -o BDOMemory.o
+g++ -std=c++17 -Wall -Wextra -O2 -c AntiDetection.cpp -o AntiDetection.o
+g++ -std=c++17 -Wall -Wextra -O2 -c BDOBot.cpp -o BDOBot.o
+g++ MemoryReader.o BDOMemory.o AntiDetection.o BDOBot.o -o bdo_bot.exe -luser32 -lpsapi
+
+if %ERRORLEVEL% EQU 0 (
+    echo [+] bdo_bot.exe built successfully!
+    echo.
+) else (
+    echo [-] Build failed!
     pause
     exit /b 1
 )
 
-echo.
-echo [+] Renaming temporary build to final executable...
-move /Y "%~dp0bin\x64\Release\%RAND_NAME%.exe" "%~dp0bin\x64\Release\BDOStealthBot.exe" > nul
+REM Skip demo build - main.cpp was removed
+echo [*] Skipping demo build (old files removed)
 
-echo.
+REM Clean object files
+del *.o
+
 echo ========================================
-echo       SOLUTION BUILD SUCCEEDED!
+echo  Build Complete!
 echo ========================================
 echo.
-echo Driver:  %~dp0bin\x64\Release\WinSysService.sys
-echo App:     %~dp0bin\x64\Release\BDOStealthBot.exe
+echo Run as Administrator:
+echo   bdo_bot.exe          - Memory reader tool
+echo   antidetection_demo.exe - Simple demo
 echo.
 pause

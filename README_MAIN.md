@@ -2,13 +2,18 @@
 
 ## 🚀 **Quick Start - Choose Your Speed**
 
-### ⚡ **Super Fast (10 minutes)**
-1. **Double-click:** `COMPILE_NOW.bat`
-2. **Find address:** Use Cheat Engine to find health
-3. **Run:** `BDOStealthBot.exe` as Admin
-4. **Done!** Bot will auto-use potions
+### ⚡ **Super Fast (5 minutes)** ⭐ RECOMMENDED
+1. **Double-click:** `RUN_EVERYTHING.bat` or `ONE_CLICK_START.bat`
+2. **Wait:** Compiles and checks everything automatically
+3. **Done!** Bot launches and finds addresses automatically
 
-👉 **[START HERE](START_HERE.md)** - Complete 10-minute guide
+👉 **[QUICK START SAFE](QUICK_START_SAFE.md)** - Safe method (no Cheat Engine!)
+👉 **[USAGE_GUIDE.txt](USAGE_GUIDE.txt)** - Which batch file to use?
+
+### 📖 **Complete Setup (10 minutes)**
+Full walkthrough with all options
+
+👉 **[START HERE](START_HERE.md)** - Complete guide
 
 ### 📖 **Detailed Setup (30 minutes)**
 Full walkthrough with explanations and troubleshooting
@@ -115,6 +120,13 @@ int main() {
 | [QUICK_START.md](QUICK_START.md) | 5-minute quick reference | 5 min |
 | [STEP_BY_STEP_GUIDE.md](STEP_BY_STEP_GUIDE.md) | Complete walkthrough | 30 min |
 | [README_VISUAL_GUIDE.txt](README_VISUAL_GUIDE.txt) | Visual diagrams | - |
+
+### 🔍 **Finding Addresses**
+| Document | Description | Status |
+|----------|-------------|--------|
+| [SAFE_MEMORY_FINDING.md](SAFE_MEMORY_FINDING.md) | ✅ Safe method (built-in scanner) | **USE THIS** |
+| [~~CHEAT_ENGINE_GUIDE.md~~](CHEAT_ENGINE_GUIDE.md) | ⚠️ Outdated (BDO blocks it) | Don't use |
+| [QUICK_REFERENCE.txt](QUICK_REFERENCE.txt) | Common addresses | Reference |
 
 ### 📖 **Integration Guides**
 | Document | Description |
@@ -317,6 +329,20 @@ Addresses change when:
 ---
 
 ## 🔧 **Common Issues**
+
+### "Bot closes immediately after starting"
+```
+✅ Solution:
+You must start BDO BEFORE running the bot!
+
+1. Launch Black Desert Online
+2. Log into a character
+3. Enter the game world
+4. THEN run the bot
+
+📖 Read: WHY_BOT_CLOSES.md for details
+🚀 Use: SMART_START.bat (checks BDO automatically)
+```
 
 ### "Failed to attach to game"
 ```

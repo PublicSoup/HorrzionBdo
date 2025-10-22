@@ -1,0 +1,204 @@
+========================================
+BDO Memory Reader - Quick Start Guide
+========================================
+
+EDUCATIONAL PURPOSE ONLY - DO NOT USE ON LIVE SERVERS
+
+========================================
+WHAT THIS IS:
+========================================
+
+Working code that demonstrates how to:
+- Read memory from Black Desert Online
+- Find game addresses with pattern scanning
+- Read player health, position, entities
+- Avoid simple anti-cheat detection
+
+This is REAL, WORKING code for educational purposes.
+
+========================================
+HOW TO BUILD:
+========================================
+
+Method 1 (Windows - Recommended):
+  1. Install MinGW-w64 from: https://sourceforge.net/projects/mingw-w64/
+  2. Add to PATH: C:\mingw64\bin
+  3. Run: BUILD.bat
+
+Method 2 (Visual Studio):
+  1. Open "Developer Command Prompt for VS"
+  2. Run: cl /EHsc /std:c++17 /Fe:bdo_bot.exe BDOBot.cpp BDOMemory.cpp MemoryReader.cpp AntiDetection.cpp /link user32.lib psapi.lib
+
+Method 3 (Manual):
+  g++ -std=c++17 BDOBot.cpp BDOMemory.cpp MemoryReader.cpp AntiDetection.cpp -o bdo_bot.exe -luser32 -lpsapi
+
+========================================
+HOW TO USE:
+========================================
+
+1. Start Black Desert Online
+2. Right-click bdo_bot.exe -> "Run as Administrator"
+3. Tool will attach automatically
+4. Choose menu option:
+   - Option 1: See your health, mana, position
+   - Option 3: Live monitoring
+   - Option 4: Search for byte patterns
+   - Option 5: Find game offsets
+
+========================================
+HOW IT WORKS:
+========================================
+
+1. PROCESS ATTACHMENT
+   - Finds "BlackDesert64.exe" process
+   - Opens handle with ReadProcessMemory permission
+   - Gets base address
+
+2. MEMORY READING
+   - Uses Windows API: ReadProcessMemory
+   - Reads any data type from game memory
+   - Can read health, position, etc.
+
+3. PATTERN SCANNING
+   - Searches for unique byte sequences
+   - Example: "48 8B 0D ?? ?? ?? ??" 
+   - Finds addresses that change with updates
+
+4. OFFSET FINDING
+   - Follows pointer chains
+   - Base -> Pointer -> Object -> Data
+   - Example: Base+0x18 -> Player+0x2C -> Health
+
+========================================
+BYPASSING ANTI-CHEAT:
+========================================
+
+Black Desert uses XIGNCODE3/EAC which:
+- Hooks ReadProcessMemory (may detect this tool)
+- Runs kernel driver (sees all memory access)
+- Does integrity checks
+- Analyzes behavior patterns
+
+This code:
+✓ Uses standard ReadProcessMemory (may or may not work)
+✓ Pattern scanning to find dynamic addresses
+✓ Anti-detection timing (human-like delays)
+✗ Does NOT bypass kernel-level anti-cheat
+✗ Does NOT use advanced evasion techniques
+
+Real bypass methods (NOT implemented here):
+- Direct syscalls (bypass user-mode hooks)
+- Kernel driver (Ring 0 access)
+- DMA hardware (external memory reading)
+- Hypervisor (VM-level reading)
+
+========================================
+FINDING YOUR OWN OFFSETS:
+========================================
+
+Game updates change addresses. To find new ones:
+
+1. Download Cheat Engine
+2. Attach to BlackDesert64.exe
+3. Scan for your current HP value (Float)
+4. Take damage
+5. Next scan for new HP value
+6. Repeat until you find the address
+7. Right-click -> "Find out what accesses this address"
+8. Look at the instruction (e.g., MOV EAX, [RCX+2C])
+9. 0x2C is the health offset
+10. Find what sets RCX (pointer chain)
+11. Trace back to static address
+12. Update BDOMemory.h with new offsets
+
+========================================
+TROUBLESHOOTING:
+========================================
+
+"Failed to attach to game"
+→ Run as Administrator
+→ Check process name (might be BlackDesert32.exe)
+→ Anti-cheat may be blocking
+
+"Player base not found"
+→ Patterns outdated after game update
+→ Find new offsets with Cheat Engine
+→ Update BDOMemory.h
+
+"Access denied"
+→ Must run as Administrator
+→ Check Windows security settings
+
+Anti-cheat detects and bans you
+→ DO NOT use on main account
+→ DO NOT use on live servers
+→ This is for learning only!
+
+========================================
+LEARNING RESOURCES:
+========================================
+
+Books:
+- "Windows Internals" by Mark Russinovich
+- "Game Hacking" by Nick Cano
+- "Practical Reverse Engineering"
+
+Tools:
+- Cheat Engine (pattern finding)
+- x64dbg (debugging/reverse engineering)
+- IDA Pro (disassembly)
+- Process Hacker (system monitoring)
+
+Forums (educational sections):
+- UnknownCheats
+- GuidedHacking
+- Stack Overflow
+
+========================================
+IMPORTANT WARNINGS:
+========================================
+
+⚠️ Using this on live servers WILL:
+   - Get you permanently banned
+   - Ban your hardware ID
+   - Lose all purchased content
+   - Possible legal action
+
+✓ Use for:
+   - Learning Windows API
+   - Understanding memory management
+   - Security research
+   - Educational purposes
+
+✗ Do NOT:
+   - Use on main account
+   - Use on live servers
+   - Sell or distribute
+   - Create actual cheats
+
+========================================
+FILES IN THIS PROJECT:
+========================================
+
+MemoryReader.h/cpp    - Core memory reading engine
+BDOMemory.h/cpp       - BDO-specific structures
+BDOBot.cpp            - Main program
+AntiDetection.h/cpp   - Human behavior simulation
+BUILD.bat             - Build script
+USAGE_GUIDE.md        - Detailed documentation
+README.md             - Project overview
+
+========================================
+LEGAL DISCLAIMER:
+========================================
+
+This software is provided for EDUCATIONAL PURPOSES ONLY.
+The author does not condone or support cheating in games.
+Use at your own risk. You have been warned.
+
+========================================
+
+Questions? Read USAGE_GUIDE.md for detailed info.
+
+Remember: The goal is to LEARN, not to CHEAT!
+

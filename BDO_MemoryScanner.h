@@ -12,6 +12,11 @@
 #include <variant>
 #include <chrono>
 
+// Define QWORD if not already defined
+#ifndef QWORD
+typedef unsigned __int64 QWORD;
+#endif
+
 // Advanced Memory Scanner with multi-threaded support and value type detection
 
 enum class ValueType {
@@ -192,7 +197,7 @@ public:
     bool FindPointerPath(PVOID sourceAddress, PVOID targetAddress, std::vector<SIZE_T>& offsets, SIZE_T maxDepth = 5);
     
     // Progress and control
-    ScanProgress GetProgress();
+    const ScanProgress& GetProgress() const;
     void StopScan();
     bool IsScanRunning();
     double GetScanSpeed(); // Bytes per second

@@ -23,6 +23,8 @@
 // Forward declarations for main functions
 int bot_main();
 int mapper_main();
+int rtcore64_main();
+int rtcore64_comprehensive_test_main();
 
 
 #endif //PCH_H

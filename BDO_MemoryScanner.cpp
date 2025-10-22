@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <iomanip>
 #include <regex>
+#include <TlHelp32.h>
+#include <Psapi.h>
 
 BDOMemoryScanner::BDOMemoryScanner(size_t threadCount) 
     : hProcess(NULL), processId(0), threadCount(threadCount) {
@@ -665,7 +667,7 @@ std::string BDOMemoryScanner::ValueToString(const std::variant<BYTE, WORD, DWORD
     }, value);
 }
 
-std::vector<BDOMemoryScanner::ScanResult> BDOMemoryScanner::GetResults() {
+std::vector<ScanResult> BDOMemoryScanner::GetResults() {
     std::lock_guard<std::mutex> lock(scannerMutex);
     return currentResults;
 }
@@ -826,7 +828,7 @@ bool BDOMemoryScanner::ReadString(PVOID address, std::string& str, SIZE_T maxLen
     return true;
 }
 
-BDOMemoryScanner::ScanProgress BDOMemoryScanner::GetProgress() {
+const ScanProgress& BDOMemoryScanner::GetProgress() const {
     return progress;
 }
 
@@ -1018,5 +1020,16 @@ bool MemoryValueMonitor::HasValueChanged(PVOID address) {
     if (it != valueHistory.end() && it->second.size() >= 2) {
         return it->second[it->second.size() - 1] != it->second[it->second.size() - 2];
     }
+    return false;
+}
+
+// Stub implementations for missing advanced functions
+bool BDOMemoryScanner::AnalyzeStructure(PVOID address, SIZE_T maxSize, StructureInfo& info) {
+    // Stub implementation - would analyze memory structure
+    return false;
+}
+
+bool BDOMemoryScanner::FindPointerPath(PVOID sourceAddress, PVOID targetAddress, std::vector<SIZE_T>& offsets, SIZE_T maxDepth) {
+    // Stub implementation - would find pointer chains
     return false;
 }

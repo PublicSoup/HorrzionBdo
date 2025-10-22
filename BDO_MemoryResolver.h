@@ -10,6 +10,7 @@
 #include <mutex>
 #include <chrono>
 #include <random>
+#include "BDO_RTCore64_Driver.h"
 
 // BDO Memory Address Resolver
 // Advanced system for dynamically finding and resolving game memory addresses

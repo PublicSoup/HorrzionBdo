@@ -2,6 +2,7 @@
 
 #include "BDO_MemoryResolver.h"
 #include "BDO_MemoryScanner.h"
+#include "BDO_RTCore64_Driver.h"
 #include <windows.h>
 #include <vector>
 #include <map>
@@ -153,7 +154,7 @@ public:
     bool ScanForValue(ValueType type, const std::string& value, ScanType scanType = ScanType::ExactValue);
     bool ScanForUnknown(ValueType type);
     bool NextScan(ScanType scanType, const std::string& value = "");
-    std::vector<BDOMemoryScanner::ScanResult> GetScanResults();
+    std::vector<ScanResult> GetScanResults();
     bool CreateMemorySnapshot(const std::string& name);
     bool CompareSnapshot(const std::string& name, ScanType compareType = ScanType::Changed);
     
@@ -240,7 +241,7 @@ public:
     bool IsAddressExecutable(PVOID address);
     bool IsAddressWritable(PVOID address);
     SIZE_T GetMemoryRegionSize(PVOID address);
-    DWORD GetMemoryProtection(PVOID address);
+    std::string AddressToHexString(PVOID address);
     
     // Debug functions
     void EnableDebugOutput(bool enable);

@@ -1,48 +1,78 @@
 # 🚀 START HERE - Quick Setup
 
-## ⚡ Super Fast Setup (10 minutes)
+## ⚡ Super Fast Setup (5 minutes)
 
-### Step 1: Compile (2 minutes)
+### Step 1: Run Everything (2 minutes)
+
+**Option A: All-in-One (Recommended)** ⭐
+```
+Right-click: RUN_EVERYTHING.bat
+Select: "Run as administrator"
+Wait for: Automatic compilation and launch!
+```
+**This does EVERYTHING for you!**
+
+**Option B: One-Click Start (If already compiled)**
+```
+Double-click: ONE_CLICK_START.bat
+(Checks BDO and launches immediately)
+```
+
+**Option C: Manual Compile Only**
 ```
 Double-click: COMPILE_NOW.bat
-
 Wait for: "✓ COMPILATION SUCCESSFUL!"
 ```
 
+**Need help choosing?** Read: `WHICH_FILE_TO_RUN.md`
+
 ### Step 2: Find Health Address (5 minutes)
 
-**📖 DETAILED GUIDE:** See **[CHEAT_ENGINE_GUIDE.md](CHEAT_ENGINE_GUIDE.md)** for complete walkthrough with screenshots!
+⚠️ **IMPORTANT: Don't use Cheat Engine!** BDO will close with error `E019100B`
 
-**Quick Version:**
+**📖 USE THIS GUIDE:** See **[SAFE_MEMORY_FINDING.md](SAFE_MEMORY_FINDING.md)** for safe method!
+
+**Quick Version (Built-in Scanner):**
 ```
-1. Download Cheat Engine: https://www.cheatengine.org/
-2. Start Black Desert Online
-3. Open Cheat Engine
-4. Click computer icon → Select "BlackDesert64.exe"
-5. Enter your current health: 1500
-6. Click "First Scan"
-7. Take damage in game (health → 1200)
-8. Enter new health: 1200
-9. Click "Next Scan"
-10. Repeat steps 7-9 until you have 1-5 results
-11. Write down the address (e.g., 7FF6A2B4C890)
+1. Start Black Desert Online
+2. Run BDOStealthBot.exe as Administrator
+3. Choose: 1 (Use internal scanner)
+4. Wait 30 seconds
+5. Addresses found automatically!
 ```
 
-**Need help?** Read the **[complete Cheat Engine guide](CHEAT_ENGINE_GUIDE.md)** with troubleshooting!
+**Alternative (Manual Entry):**
+```
+If you have addresses from forums/Discord:
+1. Run BDOStealthBot.exe as Administrator
+2. Choose: 2 (Enter manually)
+3. Type address: 7FF6A2B4C890
+```
+
+**Need help?** Read the **[complete safe guide](SAFE_MEMORY_FINDING.md)** - no Cheat Engine needed!
 
 ### Step 3: Run Bot (3 minutes)
+
+⚠️ **IMPORTANT: Start BDO FIRST, then run the bot!**
+
+**Easy Way (Recommended):**
 ```
-1. Bot window should open automatically
-   (or run: bin\x64\Release\BDOStealthBot.exe as Admin)
-
-2. Choose option: 2
-
-3. Enter your health address: 7FF6A2B4C890
-
-4. Choose option: 4 (Combat Bot)
-
-5. Done! Bot will auto-use potions
+1. Double-click: SMART_START.bat
+   - Checks if BDO is running
+   - Starts bot automatically
 ```
+
+**Manual Way:**
+```
+1. Make sure BDO is running and you're in-game
+2. Run: bin\x64\Release\BDOStealthBot.exe as Admin
+3. Choose option: 1 (Use internal scanner)
+4. Wait 30 seconds for addresses
+5. Choose option: 4 (Combat Bot)
+6. Done! Bot will auto-use potions
+```
+
+**If bot closes immediately:** Read `WHY_BOT_CLOSES.md`
 
 ---
 

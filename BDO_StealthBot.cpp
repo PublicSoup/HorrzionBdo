@@ -1,19 +1,18 @@
-// BDO Stealth Bot - Main Application
-// Disguised as Windows System Monitor to avoid detection
-
 #include "pch.h"
 #include "BDO_StealthGUI.h"
 #include "BDO_MemoryResolver.h"
 #include "BDO_AdvancedMemory.h"
 #include "BDO_DriverInterface.h"
+#include "BDO_RTCore64_Driver.h"
 #include <windows.h>
 #include <iostream>
 #include <thread>
 #include <chrono>
 #include <random>
 
-// External kernel interface
+// External kernel interfaces
 extern BdoKernelInterface g_KernelInterface;
+extern RTCore64Driver g_RTCore64;
 
 // Global variables
 std::unique_ptr<BDOStealthGUI> g_GUI;
@@ -81,13 +80,21 @@ int bot_main() {
     std::cout << "BDO Stealth Bot v2.0 (Kernel Edition)" << std::endl;
     std::cout << "=====================================" << std::endl;
     
-    // Initialize kernel interface
-    std::cout << "Connecting to kernel driver..." << std::endl;
-    if (g_KernelInterface.Connect()) {
-        std::cout << "[SUCCESS] Kernel driver connected - memory operations will bypass anti-cheat" << std::endl;
+    // Initialize RTCore64 driver (highest priority)
+    std::cout << "Connecting to RTCore64 driver..." << std::endl;
+    if (g_RTCore64.Connect()) {
+        std::cout << "[SUCCESS] RTCore64 driver connected - memory operations will bypass anti-cheat" << std::endl;
     } else {
-        std::cout << "[WARNING] Kernel driver not found - using fallback mode (may be detected)" << std::endl;
-        std::cout << "Run the manual mapper (--map-driver) to load the kernel driver" << std::endl;
+        std::cout << "[WARNING] RTCore64 driver not found - trying alternative drivers" << std::endl;
+        
+        // Fall back to original kernel driver
+        std::cout << "Connecting to kernel driver..." << std::endl;
+        if (g_KernelInterface.Connect()) {
+            std::cout << "[SUCCESS] Kernel driver connected - memory operations will bypass anti-cheat" << std::endl;
+        } else {
+            std::cout << "[WARNING] No kernel drivers found - using fallback mode (may be detected)" << std::endl;
+            std::cout << "Run the RTCore64 test (--rtcore64) to check driver status" << std::endl;
+        }
     }
     
     // Initialize bot
@@ -100,32 +107,37 @@ int bot_main() {
     std::cout << "Bot systems initialized successfully" << std::endl;
     
     // Create GUI
-    std::cout << "Creating GUI..." << std::endl;
-    g_GUI = std::make_unique<BDOStealthGUI>();
-    if (!g_GUI->Initialize(GetModuleHandle(nullptr), SW_SHOW)) {
-        std::cout << "Failed to initialize GUI" << std::endl;
-        MessageBoxA(nullptr, "Failed to initialize GUI", "Error", MB_OK);
-        ShutdownBot();
-        return 1;
-    }
-    std::cout << "GUI initialized successfully" << std::endl;
-    MessageBoxA(nullptr, "GUI initialized successfully!", "Success", MB_OK);
-    
-    // Create bot GUI
+    std::cout << "Creating bot GUI..." << std::endl;
     CreateBotGUI();
     
-    // Note: Kernel driver functionality removed for user-mode build
-    
     // Start bot thread
+    std::cout << "Starting bot thread..." << std::endl;
     std::thread botThread(RunBot);
+    botThread.detach();
     
-    // Run GUI
-    g_GUI->Run();
+    // Initialize default configuration
+    g_Config.enableAutoHealing = true;
+    g_Config.enableAutoMana = true;
+    g_Config.enableAutoSelling = false;
+    g_Config.enableAutoCombat = false;
+    g_Config.enableStealthMode = true;
+    g_Config.enableAntiDetection = true;
+    g_Config.minHealthThreshold = 50;
+    g_Config.minManaThreshold = 30;
+    g_Config.maxWeightThreshold = 80.0f;
+    g_Config.potionCooldown = 3000;
+    g_Config.skillCooldown = 1000;
+    g_Config.updateInterval = 100;
     
-    // Stop bot
-    g_BotRunning = false;
-    if (botThread.joinable()) {
-        botThread.join();
+    // Run message loop
+    if (g_GUI) {
+        g_GUI->Run();
+    } else {
+        std::cout << "GUI not initialized, running in console mode" << std::endl;
+        std::cout << "Press Ctrl+C to exit" << std::endl;
+        while (g_BotRunning) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
     }
     
     // Cleanup
@@ -134,20 +146,127 @@ int bot_main() {
     return 0;
 }
 
+// Main entry point
+int main(int argc, char* argv[]) {
+    // Process command line arguments
+    bool useRTCore64 = false;
+    
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--rtcore64") == 0) {
+            useRTCore64 = true;
+        }
+    }
+    
+    // Process RTCore64 flags
+    if (useRTCore64) {
+        // Check for comprehensive test flag
+        bool comprehensiveTest = false;
+        for (int i = 1; i < argc; i++) {
+            if (strcmp(argv[i], "--comprehensive") == 0) {
+                comprehensiveTest = true;
+                break;
+            }
+        }
+        
+        // Run the appropriate test
+        if (comprehensiveTest) {
+            return rtcore64_comprehensive_test_main();
+        } else {
+            return rtcore64_main();
+        }
+    }
+    std::cout << "================================================" << std::endl;
+    std::cout << "    BDO Stealth Bot - Initializing..." << std::endl;
+    std::cout << "================================================" << std::endl;
+    std::cout << std::endl;
+    
+    // Initialize bot components
+    try {
+        g_Memory = std::make_unique<BDOAdvancedMemory>();
+        g_Resolver = std::make_unique<BDOMemoryResolver>();
+        
+        std::cout << "[OK] Memory systems initialized" << std::endl;
+        
+        // Attach to BDO process
+        if (!g_Memory->AttachToProcess(L"BlackDesert64.exe")) {
+            std::cerr << std::endl;
+            std::cerr << "========================================" << std::endl;
+            std::cerr << "  ATTACHMENT FAILED - DIAGNOSTICS" << std::endl;
+            std::cerr << "========================================" << std::endl;
+            std::cerr << std::endl;
+            std::cerr << "Please review the detailed log above." << std::endl;
+            std::cerr << std::endl;
+            std::cerr << "Common Solutions:" << std::endl;
+            std::cerr << "1. Start Black Desert Online and log into a character" << std::endl;
+            std::cerr << "2. Verify process name is BlackDesert64.exe in Task Manager" << std::endl;
+            std::cerr << "3. Run this program as Administrator" << std::endl;
+            std::cerr << "4. Check if XignCode is blocking (NtOpenProcess should bypass)" << std::endl;
+            std::cerr << std::endl;
+            std::cerr << "What was attempted (check log above):" << std::endl;
+            std::cerr << "- Process search and PID detection" << std::endl;
+            std::cerr << "- NtOpenProcess (anti-hook method)" << std::endl;
+            std::cerr << "- Standard OpenProcess (fallback)" << std::endl;
+            std::cerr << "- Base address detection" << std::endl;
+            std::cerr << "- Memory read test" << std::endl;
+            std::cerr << std::endl;
+            std::cout << "Press Enter to exit..." << std::endl;
+            std::cin.get();
+            return 1;
+        }
+        
+        std::cout << "[OK] Attached to BDO process" << std::endl;
+        
+        // Enable stealth features
+        g_Memory->EnableAntiDetection(true);
+        g_Memory->EnableStealthMode(true);
+        g_Memory->SetOperationDelay(10, 50);
+        
+        std::cout << "[OK] Stealth features enabled" << std::endl;
+        std::cout << std::endl;
+        std::cout << "Bot is now running. Press Ctrl+C to stop." << std::endl;
+        std::cout << "================================================" << std::endl;
+        
+        // Keep the bot running
+        while (true) {
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+            
+            // Read and display player stats periodically
+            int currentHealth, maxHealth;
+            int currentMana, maxMana;
+            
+            if (g_Memory->ReadPlayerHealth(currentHealth, maxHealth)) {
+                // Bot is working
+            }
+            
+            if (g_Memory->ReadPlayerMana(currentMana, maxMana)) {
+                // Bot is working
+            }
+        }
+        
+    } catch (const std::exception& e) {
+        std::cerr << "[EXCEPTION] " << e.what() << std::endl;
+        std::cout << std::endl << "Press Enter to exit..." << std::endl;
+        std::cin.get();
+        return 1;
+    }
+    
+    return 0;
+}
+
 bool InitializeBot() {
-    // Initialize configuration
+    // Set up default configuration
     g_Config.enableAutoHealing = true;
     g_Config.enableAutoMana = true;
-    g_Config.enableAutoSelling = true;
-    g_Config.enableAutoCombat = true;
+    g_Config.enableAutoSelling = false;
+    g_Config.enableAutoCombat = false;
     g_Config.enableStealthMode = true;
     g_Config.enableAntiDetection = true;
-    g_Config.minHealthThreshold = 60;
-    g_Config.minManaThreshold = 40;
-    g_Config.maxWeightThreshold = 95.0f;
-    g_Config.potionCooldown = 3000; // 3 seconds
-    g_Config.skillCooldown = 2000;  // 2 seconds
-    g_Config.updateInterval = 100;  // 100ms
+    g_Config.minHealthThreshold = 50;
+    g_Config.minManaThreshold = 30;
+    g_Config.maxWeightThreshold = 80.0f;
+    g_Config.potionCooldown = 3000;
+    g_Config.skillCooldown = 1000;
+    g_Config.updateInterval = 100;
     
     // Initialize state
     g_State.currentHealth = 0;
@@ -167,26 +286,17 @@ bool InitializeBot() {
     g_State.lastWeightCheck = std::chrono::steady_clock::now();
     g_State.lastCombatCheck = std::chrono::steady_clock::now();
     
-    // Initialize memory system
+    // Create memory systems
     g_Memory = std::make_unique<BDOAdvancedMemory>();
     g_Resolver = std::make_unique<BDOMemoryResolver>();
     
-    // Enable anti-detection
-    if (g_Config.enableAntiDetection) {
-        g_Memory->EnableAntiDetection(true);
-        g_Memory->EnableStealthMode(true);
-        g_Memory->SetOperationDelay(10, 50);
-    }
+    // Create GUI
+    g_GUI = std::make_unique<BDOStealthGUI>();
     
-    // Attach to BDO process (simulated for demo)
+    // Connect to BDO process
     if (!g_Memory->AttachToProcess(L"BlackDesert64.exe")) {
-        std::cout << "BDO process not found. Running in demo mode." << std::endl;
-        // Continue anyway for demo purposes
-    }
-    
-    // Resolve memory addresses (simulated for demo)
-    if (!g_Resolver->AttachToProcess(L"BlackDesert64.exe")) {
-        std::cout << "Failed to attach memory resolver. Running in demo mode." << std::endl;
+        std::cout << "Failed to attach to BDO process" << std::endl;
+        std::cout << "Running in demo mode" << std::endl;
         // Continue anyway for demo purposes
     }
     
@@ -204,7 +314,16 @@ bool InitializeBot() {
 void ShutdownBot() {
     g_BotRunning = false;
     
-    // Note: Kernel driver functionality removed for user-mode build
+    // Disconnect from drivers
+    if (g_RTCore64.IsConnected()) {
+        g_RTCore64.Disconnect();
+        LogBotMessage("Disconnected from RTCore64 driver");
+    }
+    
+    if (g_KernelInterface.IsConnected()) {
+        g_KernelInterface.Disconnect();
+        LogBotMessage("Disconnected from kernel driver");
+    }
     
     // Cleanup memory system
     if (g_Memory) {
@@ -522,7 +641,36 @@ void UpdateBotGUI() {
     g_GUI->UpdateSystemMonitorGUI();
 }
 
-// Driver functions removed for user-mode build
+// Connect to driver
+bool ConnectToDriver() {
+    // Try RTCore64 driver first (highest priority)
+    if (g_RTCore64.Connect()) {
+        LogBotMessage("Connected to RTCore64 driver");
+        return true;
+    }
+    
+    // Fall back to original kernel driver
+    if (g_KernelInterface.Connect()) {
+        LogBotMessage("Connected to kernel driver");
+        return true;
+    }
+    
+    LogBotMessage("Failed to connect to any kernel driver");
+    return false;
+}
+
+// Disconnect from driver
+void DisconnectFromDriver() {
+    if (g_RTCore64.IsConnected()) {
+        g_RTCore64.Disconnect();
+        LogBotMessage("Disconnected from RTCore64 driver");
+    }
+    
+    if (g_KernelInterface.IsConnected()) {
+        g_KernelInterface.Disconnect();
+        LogBotMessage("Disconnected from kernel driver");
+    }
+}
 
 void AddStealthDelay() {
     if (g_StealthMode) {

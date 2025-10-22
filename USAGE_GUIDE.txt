@@ -1,0 +1,276 @@
+============================================================
+  BDO BOT - BATCH FILE USAGE GUIDE
+============================================================
+
+You now have MULTIPLE ways to run the bot! Choose what works best for you:
+
+============================================================
+📁 BATCH FILES AVAILABLE
+============================================================
+
+1. RUN_EVERYTHING.bat ⭐ RECOMMENDED
+   ├─ What it does:
+   │  • Checks all prerequisites
+   │  • Compiles bot if needed
+   │  • Checks if BDO is running
+   │  • Launches bot automatically
+   │  • Shows helpful messages at each step
+   │
+   └─ When to use:
+      • First time setup
+      • When you want full control
+      • When troubleshooting issues
+
+2. COMPILE_AND_RUN.bat
+   ├─ What it does:
+   │  • Quick compile
+   │  • Minimal output
+   │  • Launches bot
+   │
+   └─ When to use:
+      • After code changes
+      • Quick recompile needed
+      • You know what you're doing
+
+3. ONE_CLICK_START.bat ⚡ FASTEST
+   ├─ What it does:
+   │  • Checks if compiled (compiles if not)
+   │  • Checks if BDO running
+   │  • Launches bot immediately
+   │
+   └─ When to use:
+      • Daily use (after first setup)
+      • You just want to start quickly
+      • Bot already compiled
+
+4. SMART_START.bat
+   ├─ What it does:
+   │  • Checks if BDO is running
+   │  • Launches existing bot
+   │  • No compilation
+   │
+   └─ When to use:
+      • Bot already compiled
+      • Just need to check BDO status
+      • Quick daily launch
+
+5. COMPILE_NOW.bat
+   ├─ What it does:
+   │  • Only compiles
+   │  • Doesn't run anything
+   │
+   └─ When to use:
+      • You only want to compile
+      • Testing compilation
+      • Building for later use
+
+============================================================
+🚀 RECOMMENDED WORKFLOW
+============================================================
+
+FIRST TIME:
+  1. Run: RUN_EVERYTHING.bat
+  2. Follow all the prompts
+  3. Let it compile and setup everything
+
+DAILY USE:
+  1. Start Black Desert Online
+  2. Log into character
+  3. Run: ONE_CLICK_START.bat
+  4. Done!
+
+AFTER CODE CHANGES:
+  1. Run: COMPILE_AND_RUN.bat
+  2. Test your changes
+
+============================================================
+📋 QUICK COMPARISON
+============================================================
+
+File                    | Compile | Check BDO | Run Bot | Speed
+------------------------|---------|-----------|---------|-------
+RUN_EVERYTHING.bat      |   Yes   |    Yes    |   Yes   | Slow
+COMPILE_AND_RUN.bat     |   Yes   |    Yes    |   Yes   | Medium
+ONE_CLICK_START.bat     | If need |    Yes    |   Yes   | Fast
+SMART_START.bat         |   No    |    Yes    |   Yes   | Fast
+COMPILE_NOW.bat         |   Yes   |    No     |   No    | Medium
+
+============================================================
+💡 PRO TIPS
+============================================================
+
+TIP 1: Create Desktop Shortcuts
+  Right-click ONE_CLICK_START.bat
+  → Send to → Desktop (create shortcut)
+  
+  Now you can start the bot from your desktop!
+
+TIP 2: Always Run as Administrator
+  Right-click the batch file
+  → Properties → Advanced
+  → Check "Run as administrator"
+  → OK → Apply
+  
+  Now it always runs with admin rights!
+
+TIP 3: Use ONE_CLICK_START for Daily Use
+  After first setup with RUN_EVERYTHING.bat,
+  use ONE_CLICK_START.bat for fastest startup.
+
+TIP 4: Pin to Taskbar
+  Create shortcut of ONE_CLICK_START.bat
+  Right-click shortcut → Pin to taskbar
+  
+  Now it's always one click away!
+
+============================================================
+🆘 TROUBLESHOOTING
+============================================================
+
+ISSUE: "Visual Studio not found"
+  Solution: Use RUN_EVERYTHING.bat
+  It has better Visual Studio detection
+
+ISSUE: "Bot closes immediately"
+  Solution: Use ONE_CLICK_START.bat or SMART_START.bat
+  They check if BDO is running first
+
+ISSUE: "Compilation failed"
+  Solution: 
+  1. Open BDOStealthBot.sln in Visual Studio
+  2. Build → Clean Solution
+  3. Build → Rebuild Solution
+  4. Then use ONE_CLICK_START.bat
+
+ISSUE: "Access Denied"
+  Solution: Right-click → Run as administrator
+
+============================================================
+📖 WHAT EACH FILE DOES IN DETAIL
+============================================================
+
+RUN_EVERYTHING.bat:
+  Step 1: Check admin privileges
+  Step 2: Check MSI Afterburner driver
+  Step 3: Check if bot needs compilation
+  Step 4: Compile if needed
+  Step 5: Verify executable exists
+  Step 6: Check if BDO is running
+  Step 7: Launch bot
+  Step 8: Show usage tips
+
+COMPILE_AND_RUN.bat:
+  Step 1: Check admin
+  Step 2: Find MSBuild
+  Step 3: Compile bot
+  Step 4: Check BDO (warning only)
+  Step 5: Launch bot
+
+ONE_CLICK_START.bat:
+  Step 1: Check if compiled (compile if not)
+  Step 2: Check BDO (error if not running)
+  Step 3: Launch bot
+
+SMART_START.bat:
+  Step 1: Check BDO running
+  Step 2: Check bot exists
+  Step 3: Check admin
+  Step 4: Launch bot
+
+============================================================
+🎯 WHICH ONE SHOULD YOU USE?
+============================================================
+
+Choose based on your situation:
+
+SITUATION 1: First time ever
+  → Use: RUN_EVERYTHING.bat
+  → Why: Full setup with all checks
+
+SITUATION 2: Daily use (already setup)
+  → Use: ONE_CLICK_START.bat
+  → Why: Fastest, checks BDO automatically
+
+SITUATION 3: Made code changes
+  → Use: COMPILE_AND_RUN.bat
+  → Why: Quick recompile and test
+
+SITUATION 4: Just want to compile
+  → Use: COMPILE_NOW.bat
+  → Why: Only compiles, doesn't run
+
+SITUATION 5: Bot already compiled, just need to run
+  → Use: SMART_START.bat
+  → Why: No compilation, just checks and runs
+
+============================================================
+📝 EXAMPLE WORKFLOWS
+============================================================
+
+WORKFLOW 1: Complete Beginner
+  Day 1:
+    1. Double-click: RUN_EVERYTHING.bat
+    2. Follow all prompts
+    3. Let it setup everything
+    4. Bot launches automatically
+  
+  Day 2+:
+    1. Start BDO
+    2. Double-click: ONE_CLICK_START.bat
+    3. Done!
+
+WORKFLOW 2: Developer
+  Making changes:
+    1. Edit code in Visual Studio
+    2. Save changes
+    3. Run: COMPILE_AND_RUN.bat
+    4. Test in game
+    5. Repeat
+
+WORKFLOW 3: Daily User
+  Every day:
+    1. Start BDO
+    2. Log in
+    3. Double-click desktop shortcut (ONE_CLICK_START.bat)
+    4. Bot starts automatically
+
+============================================================
+✅ CHECKLIST FOR FIRST RUN
+============================================================
+
+Before running RUN_EVERYTHING.bat:
+  □ Visual Studio 2019 or 2022 installed
+  □ MSI Afterburner installed (optional but recommended)
+  □ Running as Administrator
+  □ Black Desert Online installed
+  □ All files extracted to same folder
+
+After running RUN_EVERYTHING.bat:
+  □ Compilation successful
+  □ Bot executable created (bin\x64\Release\BDOStealthBot.exe)
+  □ Bot launched successfully
+  □ Can see bot menu
+
+For daily use:
+  □ BDO is running
+  □ Logged into character
+  □ In game world (not character select)
+  □ Run ONE_CLICK_START.bat
+
+============================================================
+🎉 YOU'RE READY!
+============================================================
+
+Recommended first run:
+  → Double-click: RUN_EVERYTHING.bat
+
+For daily use after that:
+  → Double-click: ONE_CLICK_START.bat
+
+Need help?
+  → Read: WHY_BOT_CLOSES.md
+  → Read: QUICK_START_SAFE.md
+  → Read: START_HERE.md
+
+============================================================
+

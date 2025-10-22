@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "BDO_MemoryResolver.h"
 #include "BDO_DriverInterface.h"
+#include "BDO_RTCore64_Driver.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -8,8 +9,162 @@
 #include <algorithm>
 #include <regex>
 
-// External kernel interface
+// External kernel interfaces
 extern BdoKernelInterface g_KernelInterface;
+extern RTCore64Driver g_RTCore64;
+
+// NT API structures and functions for kernel-level process access
+typedef struct _OBJECT_ATTRIBUTES {
+    ULONG Length;
+    HANDLE RootDirectory;
+    PVOID ObjectName;
+    ULONG Attributes;
+    PVOID SecurityDescriptor;
+    PVOID SecurityQualityOfService;
+} OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
+
+typedef struct _CLIENT_ID {
+    HANDLE UniqueProcess;
+    HANDLE UniqueThread;
+} CLIENT_ID, *PCLIENT_ID;
+
+typedef struct _PROCESS_BASIC_INFORMATION {
+    PVOID Reserved1;
+    PVOID PebBaseAddress;
+    PVOID Reserved2[2];
+    ULONG_PTR UniqueProcessId;
+    PVOID Reserved3;
+} PROCESS_BASIC_INFORMATION;
+
+typedef struct _PEB_LDR_DATA {
+    BYTE Reserved1[8];
+    PVOID Reserved2[3];
+    LIST_ENTRY InMemoryOrderModuleList;
+} PEB_LDR_DATA;
+
+typedef struct _PEB {
+    BYTE Reserved1[2];
+    BYTE BeingDebugged;
+    BYTE Reserved2[1];
+    PVOID Reserved3[2];
+    PVOID Ldr;
+    PVOID ProcessParameters;
+    BYTE Reserved4[104];
+    PVOID Reserved5[52];
+    PVOID PostProcessInitRoutine;
+    BYTE Reserved6[128];
+    PVOID Reserved7[1];
+    ULONG SessionId;
+} PEB;
+
+typedef NTSTATUS (NTAPI *pNtOpenProcess)(
+    PHANDLE ProcessHandle,
+    ACCESS_MASK DesiredAccess,
+    POBJECT_ATTRIBUTES ObjectAttributes,
+    PCLIENT_ID ClientId
+);
+
+typedef NTSTATUS (NTAPI *pNtQueryInformationProcess)(
+    HANDLE ProcessHandle,
+    DWORD ProcessInformationClass,
+    PVOID ProcessInformation,
+    DWORD ProcessInformationLength,
+    PDWORD ReturnLength
+);
+
+typedef NTSTATUS (NTAPI *pNtReadVirtualMemory)(
+    HANDLE ProcessHandle,
+    PVOID BaseAddress,
+    PVOID Buffer,
+    SIZE_T NumberOfBytesToRead,
+    PSIZE_T NumberOfBytesRead
+);
+
+// Lazy-loaded NT API functions
+static pNtOpenProcess NtOpenProcess = nullptr;
+static pNtQueryInformationProcess NtQueryInformationProcess = nullptr;
+static pNtReadVirtualMemory NtReadVirtualMemory = nullptr;
+
+// Initialize NT API functions
+static bool InitializeNtApi() {
+    static bool initialized = false;
+    if (initialized) return NtOpenProcess != nullptr;
+    
+    initialized = true;
+    HMODULE ntdll = GetModuleHandleA("ntdll.dll");
+    if (ntdll) {
+        NtOpenProcess = (pNtOpenProcess)GetProcAddress(ntdll, "NtOpenProcess");
+        NtQueryInformationProcess = (pNtQueryInformationProcess)GetProcAddress(ntdll, "NtQueryInformationProcess");
+        NtReadVirtualMemory = (pNtReadVirtualMemory)GetProcAddress(ntdll, "NtReadVirtualMemory");
+    }
+    return NtOpenProcess != nullptr;
+}
+
+// Get base address by reading PEB (bypasses EnumProcessModules)
+static PVOID GetBaseAddressFromPEB(HANDLE hProcess) {
+    if (!InitializeNtApi() || !NtQueryInformationProcess) {
+        return nullptr;
+    }
+    
+    // Get PEB address
+    PROCESS_BASIC_INFORMATION pbi = {0};
+    DWORD returnLength = 0;
+    NTSTATUS status = NtQueryInformationProcess(hProcess, 0, &pbi, sizeof(pbi), &returnLength);
+    
+    if (status < 0 || !pbi.PebBaseAddress) {
+        std::cout << "[DEBUG] NtQueryInformationProcess failed or no PEB" << std::endl;
+        return nullptr;
+    }
+    
+    std::cout << "[DEBUG] PEB address: 0x" << std::hex << (ULONG64)pbi.PebBaseAddress << std::dec << std::endl;
+    
+    // Read image base from PEB (it's at offset 0x10 in 64-bit)
+    PVOID imageBase = nullptr;
+    PVOID imageBasePtr = (PVOID)((ULONG64)pbi.PebBaseAddress + 0x10);
+    SIZE_T bytesRead = 0;
+    
+    // Try NtReadVirtualMemory first (bypasses ReadProcessMemory hooks)
+    if (NtReadVirtualMemory) {
+        std::cout << "[DEBUG] Using NtReadVirtualMemory (bypasses XignCode)..." << std::endl;
+        NTSTATUS status = NtReadVirtualMemory(hProcess, imageBasePtr, &imageBase, sizeof(imageBase), &bytesRead);
+        if (status < 0) {
+            std::cout << "[WARNING] NtReadVirtualMemory failed: 0x" << std::hex << status << std::dec << std::endl;
+            // Fall back to standard ReadProcessMemory
+            std::cout << "[DEBUG] Trying standard ReadProcessMemory..." << std::endl;
+            if (!ReadProcessMemory(hProcess, imageBasePtr, &imageBase, sizeof(imageBase), &bytesRead)) {
+                std::cout << "[ERROR] ReadProcessMemory also failed: " << GetLastError() << std::endl;
+                return nullptr;
+            }
+        }
+    } else {
+        // No NtReadVirtualMemory, use standard API
+        if (!ReadProcessMemory(hProcess, imageBasePtr, &imageBase, sizeof(imageBase), &bytesRead)) {
+            std::cout << "[ERROR] Failed to read image base from PEB: " << GetLastError() << std::endl;
+            return nullptr;
+        }
+    }
+    
+    std::cout << "[OK] Got base address from PEB: 0x" << std::hex << (ULONG64)imageBase << std::dec << std::endl;
+    return imageBase;
+}
+
+// Helper function to open process using NT API (bypasses usermode hooks)
+static HANDLE OpenProcessNt(DWORD pid, ACCESS_MASK desiredAccess) {
+    if (!InitializeNtApi() || !NtOpenProcess) {
+        return nullptr;
+    }
+    
+    HANDLE hProcess = nullptr;
+    OBJECT_ATTRIBUTES objAttr = { sizeof(OBJECT_ATTRIBUTES) };
+    CLIENT_ID clientId = { (HANDLE)(ULONG_PTR)pid, nullptr };
+    
+    NTSTATUS status = NtOpenProcess(&hProcess, desiredAccess, &objAttr, &clientId);
+    if (status >= 0) { // NT_SUCCESS
+        return hProcess;
+    }
+    
+    return nullptr;
+}
 
 // BDO Memory Address Resolver Implementation
 
@@ -29,49 +184,228 @@ BDOMemoryResolver::~BDOMemoryResolver() {
 
 bool BDOMemoryResolver::Initialize(DWORD pid) {
     if (pid == 0) {
+        std::cout << "[ERROR] Invalid process ID" << std::endl;
         LogMessage("Invalid process ID");
         return false;
     }
     
+    std::cout << "[DEBUG] Initializing for PID: " << pid << std::endl;
     processId = pid;
     
-    // First, try to connect to kernel driver
-    if (!g_KernelInterface.IsConnected()) {
-        LogMessage("Attempting to connect to kernel driver...");
-        if (g_KernelInterface.Connect()) {
-            LogMessage("Successfully connected to kernel driver - using kernel-level memory access");
+    // Try to connect to RTCore64 driver (OPTIONAL - for advanced features)
+    std::cout << "[INFO] Attempting RTCore64 connection (optional)..." << std::endl;
+    if (!g_RTCore64.IsConnected()) {
+        if (g_RTCore64.Connect()) {
+            std::cout << "[OK] RTCore64 connected (advanced features available)" << std::endl;
+            LogMessage("Successfully connected to RTCore64 driver");
         } else {
-            LogMessage("Kernel driver not available - falling back to user-mode APIs");
+            std::cout << "[INFO] RTCore64 not available (using standard APIs)" << std::endl;
+            LogMessage("RTCore64 driver not available - using standard APIs");
+            
+            // Fall back to original kernel driver
+            if (!g_KernelInterface.IsConnected()) {
+                if (g_KernelInterface.Connect()) {
+                    std::cout << "[INFO] Kernel driver connected" << std::endl;
+                    LogMessage("Successfully connected to kernel driver");
+                } else {
+                    std::cout << "[INFO] Using standard Windows APIs only" << std::endl;
+                    LogMessage("No kernel drivers available - using standard APIs");
+                }
+            }
         }
     }
     
-    // Open process with required permissions (still needed for some operations)
-    hProcess = OpenProcess(PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION, FALSE, processId);
-    if (!hProcess && !g_KernelInterface.IsConnected()) {
-        LogMessage("Failed to open process and no kernel driver available: " + std::to_string(GetLastError()));
-        return false;
+    // Try to open process using multiple methods (for base address enumeration)
+    // Priority: NtOpenProcess (bypasses hooks) -> OpenProcess (standard)
+    ACCESS_MASK desiredAccess = PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION;
+    
+    // Method 1: Try NtOpenProcess (bypasses usermode hooks)
+    std::cout << "[DEBUG] Attempting NtOpenProcess..." << std::endl;
+    hProcess = OpenProcessNt(processId, desiredAccess);
+    if (hProcess) {
+        std::cout << "[OK] NtOpenProcess SUCCESS - Process handle obtained!" << std::endl;
+        LogMessage("Opened process using NtOpenProcess (anti-hook)");
+    } else {
+        std::cout << "[WARNING] NtOpenProcess failed, trying standard OpenProcess..." << std::endl;
+        // Method 2: Try standard OpenProcess
+        hProcess = OpenProcess(desiredAccess, FALSE, processId);
+        if (hProcess) {
+            std::cout << "[OK] Standard OpenProcess SUCCESS - Process handle obtained!" << std::endl;
+            LogMessage("Opened process using standard OpenProcess");
+        } else {
+            DWORD error = GetLastError();
+            std::cout << "[ERROR] Failed to open process handle. Error: " << error << std::endl;
+            LogMessage("Failed to open process handle: " + std::to_string(error));
+            
+            // If we have kernel drivers, we can continue without a process handle
+            if (g_RTCore64.IsConnected() || g_KernelInterface.IsConnected()) {
+                std::cout << "[INFO] Continuing without process handle - using kernel driver" << std::endl;
+                LogMessage("Continuing without process handle - using kernel driver for memory access");
+            } else {
+                std::cout << "[ERROR] No kernel driver available and failed to open process" << std::endl;
+                LogMessage("No kernel driver available and failed to open process");
+                return false;
+            }
+        }
     }
     
     // Get process base address and image size
-    HMODULE hMods[1024];
-    DWORD cbNeeded;
-    if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
-        baseAddress = hMods[0]; // First module is usually the main executable
-        MODULEINFO modInfo;
-        if (GetModuleInformation(hProcess, hMods[0], &modInfo, sizeof(modInfo))) {
-            imageSize = modInfo.SizeOfImage;
+    std::cout << "[DEBUG] Getting process base address..." << std::endl;
+    if (hProcess) {
+        // Method 1: Use EnumProcessModules (requires valid process handle)
+        HMODULE hMods[1024];
+        DWORD cbNeeded;
+        if (EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded)) {
+            baseAddress = hMods[0]; // First module is usually the main executable
+            MODULEINFO modInfo;
+            if (GetModuleInformation(hProcess, hMods[0], &modInfo, sizeof(modInfo))) {
+                imageSize = modInfo.SizeOfImage;
+            }
+            std::cout << "[OK] Base address from EnumProcessModules: 0x" << std::hex << (ULONG64)baseAddress << std::dec << std::endl;
+            LogMessage("Got base address using EnumProcessModules");
+        } else {
+            DWORD error = GetLastError();
+            std::cout << "[WARNING] EnumProcessModules failed: " << error << std::endl;
+            if (error == 5) {
+                std::cout << "[INFO] Error 5 = XignCode blocking EnumProcessModules" << std::endl;
+            }
+            
+            // Method 1b: Try getting base address from PEB (bypasses XignCode)
+            std::cout << "[DEBUG] Trying PEB method (bypasses XignCode)..." << std::endl;
+            baseAddress = GetBaseAddressFromPEB(hProcess);
+            if (baseAddress) {
+                imageSize = 0x10000000; // Default size, will be refined later
+                LogMessage("Got base address using PEB (anti-hook)");
+            }
+        }
+    }
+    
+    // Method 2: If EnumProcessModules failed, try direct read using NtReadVirtualMemory
+    // XignCode may block ReadProcessMemory but NtReadVirtualMemory might work for some addresses
+    if (!baseAddress && hProcess) {
+        std::cout << "[DEBUG] Trying direct base address read with NtReadVirtualMemory..." << std::endl;
+        
+        // Common 64-bit base addresses for BDO
+        PVOID testAddresses[] = {
+            (PVOID)0x140000000,  // Most common 64-bit base
+            (PVOID)0x7FF600000000,  // Alternative Windows base
+            (PVOID)0x400000,     // 32-bit compat base
+        };
+        
+        for (PVOID testAddr : testAddresses) {
+            IMAGE_DOS_HEADER dosHeader = {0};
+            SIZE_T bytesRead = 0;
+            
+            // Try NtReadVirtualMemory directly
+            if (NtReadVirtualMemory) {
+                NTSTATUS status = NtReadVirtualMemory(hProcess, testAddr, &dosHeader, sizeof(dosHeader), &bytesRead);
+                if (status >= 0 && dosHeader.e_magic == IMAGE_DOS_SIGNATURE) {
+                    baseAddress = testAddr;
+                    imageSize = 0x10000000;
+                    std::cout << "[OK] Found base using NtReadVirtualMemory at: 0x" << std::hex << (ULONG64)baseAddress << std::dec << std::endl;
+                    LogMessage("Found base address using NtReadVirtualMemory: 0x" + std::to_string((ULONG64)baseAddress));
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Method 3: If still no base, try kernel drivers
+    if (!baseAddress && (g_RTCore64.IsConnected() || g_KernelInterface.IsConnected())) {
+        std::cout << "[DEBUG] Trying kernel driver base address detection..." << std::endl;
+        LogMessage("Attempting to get base address using kernel driver...");
+        
+        // Try with kernel interface which uses process ID
+        if (g_KernelInterface.IsConnected()) {
+            PVOID testAddresses[] = {
+                (PVOID)0x140000000,
+                (PVOID)0x400000,
+                (PVOID)0x10000000
+            };
+            
+            for (PVOID testAddr : testAddresses) {
+                IMAGE_DOS_HEADER dosHeader = {0};
+                if (g_KernelInterface.ReadProcessMemory(processId, testAddr, &dosHeader, sizeof(dosHeader))) {
+                    if (dosHeader.e_magic == IMAGE_DOS_SIGNATURE) {
+                        baseAddress = testAddr;
+                        imageSize = 0x10000000;
+                        std::cout << "[OK] Found base using kernel driver at: 0x" << std::hex << (ULONG64)baseAddress << std::dec << std::endl;
+                        LogMessage("Found base address using kernel driver: 0x" + std::to_string((ULONG64)baseAddress));
+                        break;
+                    }
+                }
+            }
         }
     }
     
     if (!baseAddress) {
+        std::cout << "[ERROR] Failed to get process base address" << std::endl;
         LogMessage("Failed to get process base address");
-        CloseHandle(hProcess);
-        hProcess = NULL;
+        if (hProcess) {
+            CloseHandle(hProcess);
+            hProcess = NULL;
+        }
         return false;
     }
     
+    std::cout << "[OK] Process initialized - Base: 0x" << std::hex << (ULONG64)baseAddress << std::dec << std::endl;
     LogMessage("Initialized for process " + std::to_string(processId) + 
                " at base address 0x" + AddressToHexString(baseAddress));
+    
+    // TEST CRITICAL: Validate we can actually read memory
+    if (hProcess && baseAddress) {
+        std::cout << "[DEBUG] Testing memory access..." << std::endl;
+        BYTE testBuffer[4];
+        SIZE_T bytesRead = 0;
+        bool memoryAccessWorks = false;
+        
+        // Try NtReadVirtualMemory first (most likely to work)
+        if (NtReadVirtualMemory) {
+            std::cout << "[DEBUG] Trying NtReadVirtualMemory..." << std::endl;
+            NTSTATUS status = NtReadVirtualMemory(hProcess, baseAddress, testBuffer, sizeof(testBuffer), &bytesRead);
+            if (status >= 0) {
+                std::cout << "[OK] ✓ NtReadVirtualMemory WORKS!" << std::endl;
+                std::cout << "[OK] Successfully read " << bytesRead << " bytes from BDO!" << std::endl;
+                std::cout << "[OK] PE Header: 0x" << std::hex << (int)testBuffer[0] << (int)testBuffer[1] << std::dec;
+                std::cout << " (should be 0x4D5A for 'MZ')" << std::endl;
+                memoryAccessWorks = true;
+            } else {
+                std::cout << "[WARNING] NtReadVirtualMemory failed: 0x" << std::hex << status << std::dec << std::endl;
+            }
+        }
+        
+        // Try standard ReadProcessMemory as fallback
+        if (!memoryAccessWorks) {
+            std::cout << "[DEBUG] Trying standard ReadProcessMemory..." << std::endl;
+            if (ReadProcessMemory(hProcess, baseAddress, testBuffer, sizeof(testBuffer), &bytesRead)) {
+                std::cout << "[OK] ✓ ReadProcessMemory WORKS!" << std::endl;
+                std::cout << "[OK] Successfully read " << bytesRead << " bytes from BDO!" << std::endl;
+                memoryAccessWorks = true;
+            } else {
+                DWORD error = GetLastError();
+                std::cout << "[ERROR] ReadProcessMemory also failed: " << error << std::endl;
+            }
+        }
+        
+        if (!memoryAccessWorks) {
+            std::cout << "[ERROR] ✗ ALL MEMORY READ METHODS FAILED!" << std::endl;
+            std::cout << "[ERROR] XignCode is blocking all virtual memory reads" << std::endl;
+            std::cout << "[INFO] Would need physical memory access (not yet implemented)" << std::endl;
+            LogMessage("Failed to validate memory access - all methods blocked");
+            
+            CloseHandle(hProcess);
+            hProcess = NULL;
+            return false;
+        } else {
+            LogMessage("Memory access validated - attachment fully successful");
+        }
+    } else if (!baseAddress) {
+        std::cout << "[ERROR] No base address - cannot test memory access" << std::endl;
+        return false;
+    } else {
+        std::cout << "[WARNING] No process handle - cannot test memory access" << std::endl;
+        std::cout << "[INFO] Will rely on kernel driver for memory operations" << std::endl;
+    }
     
     // Enumerate memory regions
     EnumerateMemoryRegions();
@@ -80,8 +414,12 @@ bool BDOMemoryResolver::Initialize(DWORD pid) {
 }
 
 bool BDOMemoryResolver::AttachToProcess(const std::wstring& processName) {
+    std::cout << "[DEBUG] Searching for process: ";
+    std::wcout << processName << std::endl;
+    
     HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
     if (hSnapshot == INVALID_HANDLE_VALUE) {
+        std::cout << "[ERROR] Failed to create process snapshot" << std::endl;
         LogMessage("Failed to create process snapshot");
         return false;
     }
@@ -94,6 +432,7 @@ bool BDOMemoryResolver::AttachToProcess(const std::wstring& processName) {
         do {
             if (wcscmp(pe32.szExeFile, processName.c_str()) == 0) {
                 targetPid = pe32.th32ProcessID;
+                std::cout << "[DEBUG] Found process! PID: " << targetPid << std::endl;
                 break;
             }
         } while (Process32NextW(hSnapshot, &pe32));
@@ -102,7 +441,15 @@ bool BDOMemoryResolver::AttachToProcess(const std::wstring& processName) {
     CloseHandle(hSnapshot);
     
     if (targetPid == 0) {
-        std::string processNameStr(processName.begin(), processName.end());
+        std::cout << "[ERROR] Process not found: ";
+        std::wcout << processName << std::endl;
+        std::string processNameStr;
+        if (!processName.empty())
+        {
+            int size_needed = WideCharToMultiByte(CP_UTF8, 0, &processName[0], (int)processName.size(), NULL, 0, NULL, NULL);
+            processNameStr.resize(size_needed);
+            WideCharToMultiByte(CP_UTF8, 0, &processName[0], (int)processName.size(), &processNameStr[0], size_needed, NULL, NULL);
+        }
         LogMessage("Process not found: " + processNameStr);
         return false;
     }
@@ -471,12 +818,17 @@ bool BDOMemoryResolver::ReadMemory(PVOID address, PVOID buffer, SIZE_T size) {
         return false;
     }
     
-    // Use kernel driver for reading memory
+    // Try RTCore64 driver first (highest priority)
+    if (g_RTCore64.IsConnected() || g_RTCore64.Connect()) {
+        return g_RTCore64.ReadMemory((ULONG64)address, buffer, size);
+    }
+    
+    // Fall back to original kernel driver
     if (g_KernelInterface.IsConnected()) {
         return g_KernelInterface.ReadProcessMemory(processId, address, buffer, size);
     }
     
-    // Fallback to regular API if driver not connected
+    // Last resort: regular API if no driver connected
     if (hProcess) {
         SIZE_T bytesRead;
         return ReadProcessMemory(hProcess, address, buffer, size, &bytesRead) && bytesRead == size;
@@ -490,12 +842,17 @@ bool BDOMemoryResolver::WriteMemory(PVOID address, PVOID buffer, SIZE_T size) {
         return false;
     }
     
-    // Use kernel driver for writing memory
+    // Try RTCore64 driver first (highest priority)
+    if (g_RTCore64.IsConnected() || g_RTCore64.Connect()) {
+        return g_RTCore64.WriteMemory((ULONG64)address, buffer, size);
+    }
+    
+    // Fall back to original kernel driver
     if (g_KernelInterface.IsConnected()) {
         return g_KernelInterface.WriteProcessMemory(processId, address, buffer, size);
     }
     
-    // Fallback to regular API if driver not connected
+    // Last resort: regular API if no driver connected
     if (hProcess) {
         SIZE_T bytesWritten;
         return WriteProcessMemory(hProcess, address, buffer, size, &bytesWritten) && bytesWritten == size;
