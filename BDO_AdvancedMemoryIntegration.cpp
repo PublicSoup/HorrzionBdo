@@ -11,7 +11,7 @@
 
 // Global instances
 static SecureKernelClient g_SecureKernel;
-static BDORTCore64Driver g_RTCore64;
+static RTCore64Driver g_RTCore64; // Fixed: was BDORTCore64Driver
 static bool g_UsingSecureKernel = false;
 
 class BDOMemoryBackend {
@@ -49,7 +49,7 @@ public:
         
         // Fallback to RTCore64
         std::cout << "[Memory] Secure kernel not available, falling back to RTCore64..." << std::endl;
-        if (g_RTCore64.Initialize()) {
+        if (g_RTCore64.Connect()) { // Fixed: was Initialize()
             currentBackend = BACKEND_RTCORE64;
             std::cout << "[Memory] Using RTCore64 (MSI Afterburner)" << std::endl;
             return true;
@@ -69,7 +69,7 @@ public:
         if (currentBackend == BACKEND_SECURE_KERNEL) {
             g_SecureKernel.Shutdown();
         } else if (currentBackend == BACKEND_RTCORE64) {
-            g_RTCore64.Shutdown();
+            g_RTCore64.Disconnect(); // Fixed: was Shutdown()
         }
         currentBackend = BACKEND_NONE;
     }
@@ -78,7 +78,7 @@ public:
         if (currentBackend == BACKEND_SECURE_KERNEL) {
             return g_SecureKernel.ReadMemory(targetProcessId, address, buffer, size);
         } else if (currentBackend == BACKEND_RTCORE64) {
-            return g_RTCore64.ReadVirtualMemory(targetProcessId, address, buffer, size);
+            return g_RTCore64.ReadMemory(address, buffer, size); // Fixed: was ReadVirtualMemory
         }
         return false;
     }
@@ -87,7 +87,7 @@ public:
         if (currentBackend == BACKEND_SECURE_KERNEL) {
             return g_SecureKernel.WriteMemory(targetProcessId, address, buffer, size);
         } else if (currentBackend == BACKEND_RTCORE64) {
-            return g_RTCore64.WriteVirtualMemory(targetProcessId, address, buffer, size);
+            return g_RTCore64.WriteMemory(address, buffer, size); // Fixed: was WriteVirtualMemory
         }
         return false;
     }
