@@ -1,0 +1,79 @@
+;
+; BDO_SecureKernel.inf
+; Installation file for BDO Secure Kernel Driver
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Class=System
+ClassGuid={4d36e97d-e325-11ce-bfc1-08002be10318}
+Provider=%ManufacturerName%
+DriverVer=10/21/2024,1.0.0.0
+CatalogFile=BDO_SecureKernel.cat
+
+[DestinationDirs]
+DefaultDestDir = 12
+BDO_SecureKernel_Device_CoInstaller_CopyFiles = 11
+
+[SourceDisksNames]
+1 = %DiskName%,,,""
+
+[SourceDisksFiles]
+BDO_SecureKernel.sys  = 1,,
+
+;;
+;; Default install sections
+;;
+
+[DefaultInstall]
+OptionDesc = %ServiceDescription%
+CopyFiles = BDO_SecureKernel.DriverFiles
+
+[DefaultInstall.Services]
+AddService = BDO_SecureKernel,%SPSVCINST_ASSOCSERVICE%, BDO_SecureKernel_Service_Inst
+
+[BDO_SecureKernel.DriverFiles]
+BDO_SecureKernel.sys
+
+;;
+;; Default uninstall sections
+;;
+
+[DefaultUninstall]
+DelFiles   = BDO_SecureKernel.DriverFiles
+DelReg     = BDO_SecureKernel_EventLog
+
+[DefaultUninstall.Services]
+DelService = BDO_SecureKernel,0x200      ; Flags note to STOP
+
+;;
+;; Service installation
+;;
+
+[BDO_SecureKernel_Service_Inst]
+DisplayName    = %ServiceDescription%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START 
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\BDO_SecureKernel.sys
+LoadOrderGroup = Extended Base
+
+;;
+;; Registry modifications
+;;
+
+[BDO_SecureKernel_EventLog]
+HKR,,EventMessageFile,0x00020000,"%%SystemRoot%%\System32\IoLogMsg.dll;%%SystemRoot%%\System32\drivers\BDO_SecureKernel.sys"
+HKR,,TypesSupported,0x00010001,7
+
+;;
+;; String definitions
+;;
+
+[Strings]
+SPSVCINST_ASSOCSERVICE= 0x00000002
+ManufacturerName="BDO Security Research"
+ClassName="System"
+DiskName = "BDO Secure Kernel Driver Installation Disk"
+ServiceDescription = "BDO Secure Kernel Driver"
+

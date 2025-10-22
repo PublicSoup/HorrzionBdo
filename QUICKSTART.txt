@@ -1,0 +1,161 @@
+================================================================================
+BDO SECURE KERNEL - QUICKSTART GUIDE
+================================================================================
+
+PREREQUISITES:
+- Windows 10/11 x64
+- Visual Studio 2022 (with C++ and WDK)
+- Administrator rights
+
+================================================================================
+BUILD & INSTALL (First Time)
+================================================================================
+
+1. Open "Developer Command Prompt for VS 2022" AS ADMINISTRATOR
+
+2. Navigate to project:
+   cd "C:\Users\NAS_ADMIN\source\repos\BDO BOT\HorrzionBdo"
+
+3. Run master build:
+   BUILD_EVERYTHING_SECURE.bat
+
+4. If test signing not enabled:
+   enable_test_signing.bat
+   (Computer will restart - this is required)
+
+5. After restart, install driver:
+   install_driver.bat
+
+6. Verify driver loaded:
+   sc query BDOSecureKernel
+   (Should show "RUNNING")
+
+7. Test it:
+   BDO_KernelTest.exe
+
+================================================================================
+USING THE BOT
+================================================================================
+
+1. Start Black Desert Online
+
+2. Get BDO process ID:
+   - Open Task Manager
+   - Find "BlackDesert64.exe"
+   - Right-click > Go to Details
+   - Note the PID number
+
+3. Edit BDO_PracticalBot.cpp:
+   - Change line: DWORD bdoPid = 12345;
+   - Replace 12345 with actual PID
+
+4. Recompile:
+   cl /EHsc BDO_PracticalBot.cpp BDO_SecureClient.obj
+
+5. Run:
+   BDO_PracticalBot.exe
+
+================================================================================
+TROUBLESHOOTING
+================================================================================
+
+PROBLEM: "Driver failed to load"
+FIX: 
+  - Check test signing: bcdedit | findstr testsigning
+  - Should show "Yes"
+  - If not: enable_test_signing.bat and restart
+
+PROBLEM: "Device not found"
+FIX:
+  - sc start BDOSecureKernel
+  - install_driver.bat
+
+PROBLEM: Build errors in Visual Studio
+FIX:
+  - Install WDK
+  - Restart Visual Studio
+  - Clean solution, rebuild
+
+PROBLEM: "Access denied" reading BDO memory
+FIX:
+  - This is Xigncode3 blocking
+  - Try: client.RemoveXigncodeCallbacks()
+  - May need to update stealth features
+
+PROBLEM: BDO crashes when bot runs
+FIX:
+  - Wrong memory addresses
+  - Use Cheat Engine to find correct addresses
+  - Update offsets in bot code
+
+================================================================================
+UNINSTALL
+================================================================================
+
+uninstall_driver.bat
+
+To disable test signing:
+  bcdedit /set testsigning off
+  (restart required)
+
+================================================================================
+FILE STRUCTURE
+================================================================================
+
+Core Driver:
+  BDO_SecureKernel.vcxproj  - VS project
+  BDO_SecureKernel.c/h      - Driver code
+  BDO_Stealth.c             - Stealth features
+  
+Client Library:
+  BDO_SecureClient.cpp/h    - User-mode library
+  
+Programs:
+  BDO_KernelTest.cpp        - Test suite
+  BDO_PracticalBot.cpp      - Working bot
+  BDO_StressTest.cpp        - Stress tests
+  
+Scripts:
+  BUILD_EVERYTHING_SECURE.bat - Build all
+  install_driver.bat          - Install
+  uninstall_driver.bat        - Remove
+  enable_test_signing.bat     - Enable test mode
+
+================================================================================
+QUICK COMMAND REFERENCE
+================================================================================
+
+Build driver:
+  msbuild BDO_SecureKernel.vcxproj /p:Configuration=Release /p:Platform=x64
+
+Compile programs:
+  compile_all.bat
+
+Install:
+  install_driver.bat
+
+Test:
+  BDO_KernelTest.exe
+
+Use:
+  BDO_PracticalBot.exe
+
+Uninstall:
+  uninstall_driver.bat
+
+Check status:
+  sc query BDOSecureKernel
+
+================================================================================
+WHAT TO DO IF NOTHING WORKS
+================================================================================
+
+1. Check you have WDK installed
+2. Check test signing is enabled (watermark on desktop)
+3. Check Event Viewer > System for driver errors
+4. Try building in Visual Studio instead of command line
+5. Make sure both .c files are in the project
+6. Verify you're building x64, not x86
+
+================================================================================
+

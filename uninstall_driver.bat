@@ -1,70 +1,52 @@
 @echo off
-title BDO Stealth Bot - Driver Uninstallation Script
-color 0E
+REM Uninstall the BDO Secure Kernel driver
+REM Must be run as Administrator
 
-echo ========================================
-echo  BDO Stealth Bot - Driver Uninstallation
-echo ========================================
+echo ===============================================
+echo BDO Secure Kernel - Driver Uninstall
+echo ===============================================
 echo.
 
-REM Check if running as administrator
+REM Check for admin rights
 net session >nul 2>&1
-if %errorLevel% neq 0 (
+if not %errorLevel% == 0 (
     echo ERROR: This script must be run as Administrator!
     echo Right-click and select "Run as administrator"
-    echo.
     pause
     exit /b 1
 )
 
-echo [1/5] Checking if service exists...
-sc query WinSysService >nul 2>&1
-if %errorLevel% neq 0 (
-    echo Service WinSysService not found. Nothing to uninstall.
-    echo.
+REM Check if driver is installed
+sc query BDOSecureKernel >nul 2>&1
+if not %errorLevel% == 0 (
+    echo Driver is not installed.
     pause
     exit /b 0
 )
 
-echo [2/5] Stopping service...
-sc stop WinSysService
-if %errorLevel% neq 0 (
-    echo WARNING: Failed to stop service gracefully.
-    echo Attempting to force stop...
-    sc stop WinSysService /force
+echo [1/2] Stopping driver...
+sc stop BDOSecureKernel
+if errorlevel 1 (
+    echo WARNING: Failed to stop driver (may not be running)
 )
+timeout /t 2 >nul
+echo [OK] Driver stopped
 
-echo [3/5] Waiting for service to stop...
-timeout /t 3 /nobreak >nul
-
-echo [4/5] Deleting service...
-sc delete WinSysService
-if %errorLevel% neq 0 (
-    echo ERROR: Failed to delete service!
-    echo.
-    echo Possible solutions:
-    echo 1. Ensure you are running as Administrator
-    echo 2. Check if the service is still running
-    echo 3. Try restarting your computer
-    echo.
+echo.
+echo [2/2] Removing driver service...
+sc delete BDOSecureKernel
+if errorlevel 1 (
+    echo ERROR: Failed to delete service
     pause
     exit /b 1
 )
-echo Service deleted successfully.
+echo [OK] Service removed
 
-echo [5/5] Uninstallation completed!
 echo.
-echo ========================================
-echo      DRIVER UNINSTALLATION SUMMARY
-echo ========================================
+echo ===============================================
+echo UNINSTALL COMPLETE
+echo ===============================================
 echo.
-echo Service Name: WinSysService
-echo Status: Removed
-echo.
-echo ========================================
-echo.
-echo Optional: Disable test signing
-echo Run: bcdedit /set testsigning off
-echo Then restart your computer
+echo Driver has been removed from the system.
 echo.
 pause
