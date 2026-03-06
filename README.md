@@ -245,7 +245,7 @@ Black Desert uses XIGNCODE3 and/or EasyAntiCheat which:
 - See `USAGE_GUIDE.md` for detailed instructions
 - Learn pattern scanning with Cheat Engine
 - Study "Windows Internals" by Russinovich
-- Visit GuidedHacking/UnknownCheats for education
+- There's great sources on read and write process memory everywhere over the internet google is all you need 
 - Use this project as a base But goodluck bypassing Blackdeserts anticheat Best if wishes Fellow Game modder
 - i think the custom kernal driver isnt included but its kinda ai slop needs to be refactored/restructured the files are nasty
 - But This was made when ai wasnt the best so Im sure gemini flash 3 can do better.
